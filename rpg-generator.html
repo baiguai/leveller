@@ -6,15 +6,15 @@
     <title>RPG Generator</title>
     <style>
         :root {
-            --bg-primary: #1a1a2e;
-            --bg-secondary: #16213e;
-            --bg-tertiary: #0f3460;
-            --text-primary: #e8e8e8;
-            --text-secondary: #a0a0a0;
-            --accent: #e94560;
-            --accent-hover: #ff6b6b;
-            --border: #2a2a4a;
-            --shadow: rgba(0, 0, 0, 0.3);
+            --bg-primary: #0d0d0d;
+            --bg-secondary: #1a1512;
+            --bg-tertiary: #2a2018;
+            --text-primary: #d4c4a8;
+            --text-secondary: #8b7355;
+            --accent: #c9a227;
+            --accent-hover: #e6b82e;
+            --border: #3d3025;
+            --shadow: rgba(0, 0, 0, 0.5);
         }
 
         * {
@@ -335,11 +335,11 @@
                         <h3>Maze Settings</h3>
                         <div class="control-group">
                             <label for="maze-width">Width (cells)</label>
-                            <input type="number" id="maze-width" value="20" min="5" max="50">
+                            <input type="number" id="maze-width" value="10" min="5" max="50">
                         </div>
                         <div class="control-group">
                             <label for="maze-height">Height (cells)</label>
-                            <input type="number" id="maze-height" value="20" min="5" max="50">
+                            <input type="number" id="maze-height" value="10" min="5" max="50">
                         </div>
                         <div class="control-group">
                             <label for="maze-algorithm">Algorithm</label>
@@ -505,8 +505,8 @@
             maze: {
                 cellSize: 20,
                 wallWidth: 2,
-                defaultWidth: 20,
-                defaultHeight: 20,
+                defaultWidth: 10,
+                defaultHeight: 10,
                 maxSize: 50,
                 minSize: 5,
                 complexity: {
