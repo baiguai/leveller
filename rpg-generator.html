@@ -289,6 +289,19 @@
             color: var(--text-secondary);
         }
 
+        .legend-shape {
+            width: 14px;
+            height: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .legend-shape svg {
+            width: 12px;
+            height: 12px;
+        }
+
         .legend-color {
             width: 12px;
             height: 12px;
@@ -392,23 +405,33 @@
                         <h3>Legend</h3>
                         <div class="legend">
                             <div class="legend-item">
-                                <div class="legend-color" style="background: #e94560;"></div>
+                                <div class="legend-shape">
+                                    <svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5" fill="#e94560"/></svg>
+                                </div>
                                 <span>Entrance</span>
                             </div>
                             <div class="legend-item">
-                                <div class="legend-color" style="background: #4ade80;"></div>
+                                <div class="legend-shape">
+                                    <svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5" fill="#4ade80"/></svg>
+                                </div>
                                 <span>Exit</span>
                             </div>
                             <div class="legend-item">
-                                <div class="legend-color" style="background: #ef4444;"></div>
+                                <div class="legend-shape">
+                                    <svg viewBox="0 0 14 14"><polygon points="7,1 13,12 1,12" fill="#ef4444"/></svg>
+                                </div>
                                 <span>Monster</span>
                             </div>
                             <div class="legend-item">
-                                <div class="legend-color" style="background: #fbbf24;"></div>
+                                <div class="legend-shape">
+                                    <svg viewBox="0 0 14 14"><polygon points="7,0 8.5,5 14,5 10,8.5 11.5,14 7,11 2.5,14 4,8.5 0,5 5.5,5" fill="#fbbf24"/></svg>
+                                </div>
                                 <span>Item</span>
                             </div>
                             <div class="legend-item">
-                                <div class="legend-color" style="background: #60a5fa;"></div>
+                                <div class="legend-shape">
+                                    <svg viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="10" fill="#60a5fa"/></svg>
+                                </div>
                                 <span>NPC</span>
                             </div>
                         </div>
@@ -841,6 +864,7 @@
                 this.contents.forEach(item => {
                     const cx = (item.x + 0.5) * this.cellSize;
                     const cy = (item.y + 0.5) * this.cellSize;
+                    const size = this.cellSize / 3;
                     let color;
 
                     if (item.type === 'monster') color = CONFIG.colors.monster;
@@ -849,7 +873,25 @@
 
                     this.ctx.fillStyle = color;
                     this.ctx.beginPath();
-                    this.ctx.arc(cx, cy, this.cellSize / 4, 0, Math.PI * 2);
+
+                    if (item.type === 'monster') {
+                        this.ctx.moveTo(cx, cy - size);
+                        this.ctx.lineTo(cx + size, cy + size);
+                        this.ctx.lineTo(cx - size, cy + size);
+                        this.ctx.closePath();
+                    } else if (item.type === 'npc') {
+                        this.ctx.rect(cx - size, cy - size, size * 2, size * 2);
+                    } else if (item.type === 'item') {
+                        for (let i = 0; i < 5; i++) {
+                            const angle = (i * 4 * Math.PI / 5) - Math.PI / 2;
+                            const x = cx + size * Math.cos(angle);
+                            const y = cy + size * Math.sin(angle);
+                            if (i === 0) this.ctx.moveTo(x, y);
+                            else this.ctx.lineTo(x, y);
+                        }
+                        this.ctx.closePath();
+                    }
+
                     this.ctx.fill();
                 });
 
@@ -893,11 +935,28 @@
                 this.contents.forEach(item => {
                     const cx = (item.x + 0.5) * cs;
                     const cy = (item.y + 0.5) * cs;
-                    let color;
-                    if (item.type === 'monster') color = CONFIG.colors.monster;
-                    else if (item.type === 'item') color = CONFIG.colors.item;
-                    else if (item.type === 'npc') color = CONFIG.colors.npc;
-                    svg += `<circle cx="${cx}" cy="${cy}" r="${cs / 4}" fill="${color}"/>`;
+                    const size = cs / 3;
+                    let color, shape;
+
+                    if (item.type === 'monster') {
+                        color = CONFIG.colors.monster;
+                        shape = `M${cx},${cy - size}L${cx + size},${cy + size}L${cx - size},${cy + size}Z`;
+                    } else if (item.type === 'npc') {
+                        color = CONFIG.colors.npc;
+                        shape = `M${cx - size},${cy - size}h${size * 2}v${size * 2}h-${size * 2}Z`;
+                    } else if (item.type === 'item') {
+                        color = CONFIG.colors.item;
+                        let starPath = '';
+                        for (let i = 0; i < 5; i++) {
+                            const angle = (i * 4 * Math.PI / 5) - Math.PI / 2;
+                            const x = cx + size * Math.cos(angle);
+                            const y = cy + size * Math.sin(angle);
+                            starPath += (i === 0 ? 'M' : 'L') + x + ',' + y;
+                        }
+                        shape = starPath + 'Z';
+                    }
+
+                    svg += `<path d="${shape}" fill="${color}"/>`;
                 });
 
                 svg += `<circle cx="${cs / 2}" cy="${cs / 2}" r="${cs / 3}" fill="${CONFIG.colors.entrance}"/>`;
