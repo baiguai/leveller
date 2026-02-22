@@ -94,8 +94,8 @@
             background-color: var(--bg-secondary);
         }
 
-        . {
-            font-sizecontent-header h2: 1.5rem;
+        .content-header h2 {
+            font-size: 1.5rem;
             font-weight: 500;
         }
 
@@ -212,6 +212,88 @@
             color: var(--text-secondary);
             line-height: 1.6;
         }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .checkbox-item label {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .percentage-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 4px;
+            padding-left: 28px;
+        }
+
+        .percentage-group input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent);
+        }
+
+        .percentage-group span {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            min-width: 35px;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--border);
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
     </style>
 </head>
 <body>
@@ -254,10 +336,82 @@
                                 <option value="kruskals">Kruskal's Algorithm</option>
                             </select>
                         </div>
-                        <button class="btn btn-primary" id="generate-maze">Generate Maze</button>
+                        <div class="control-group">
+                            <label for="maze-complexity">Complexity</label>
+                            <select id="maze-complexity">
+                                <option value="simple">Simple (no extra paths)</option>
+                                <option value="moderate" selected>Moderate (+10% extra paths)</option>
+                                <option value="complex">Complex (+25% extra paths)</option>
+                                <option value="chaotic">Chaotic (+50% extra paths)</option>
+                            </select>
+                        </div>
                     </div>
+
+                    <div class="controls-panel">
+                        <h3>Maze Contents</h3>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="include-monsters" checked>
+                                <label for="include-monsters">Monsters</label>
+                            </div>
+                            <div class="percentage-group">
+                                <input type="range" id="monster-chance" min="1" max="100" value="15">
+                                <span id="monster-chance-val">15%</span>
+                            </div>
+
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="include-items" checked>
+                                <label for="include-items">Items</label>
+                            </div>
+                            <div class="percentage-group">
+                                <input type="range" id="item-chance" min="1" max="100" value="10">
+                                <span id="item-chance-val">10%</span>
+                            </div>
+
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="include-npcs">
+                                <label for="include-npcs">NPCs</label>
+                            </div>
+                            <div class="percentage-group">
+                                <input type="range" id="npc-chance" min="1" max="100" value="5">
+                                <span id="npc-chance-val">5%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="generate-maze">Generate Maze</button>
+                        <button class="btn btn-secondary" id="save-maze">Save as SVG</button>
+                    </div>
+
                     <div class="canvas-container">
                         <canvas id="maze-canvas"></canvas>
+                    </div>
+
+                    <div class="output-panel">
+                        <h3>Legend</h3>
+                        <div class="legend">
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #e94560;"></div>
+                                <span>Entrance</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #4ade80;"></div>
+                                <span>Exit</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #ef4444;"></div>
+                                <span>Monster</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #fbbf24;"></div>
+                                <span>Item</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #60a5fa;"></div>
+                                <span>NPC</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -320,7 +474,10 @@
                 path: '#16213e',
                 entrance: '#e94560',
                 exit: '#4ade80',
-                grid: '#2a2a4a'
+                grid: '#2a2a4a',
+                monster: '#ef4444',
+                item: '#fbbf24',
+                npc: '#60a5fa'
             },
             maze: {
                 cellSize: 20,
@@ -328,8 +485,20 @@
                 defaultWidth: 20,
                 defaultHeight: 20,
                 maxSize: 50,
-                minSize: 5
+                minSize: 5,
+                complexity: {
+                    simple: 0,
+                    moderate: 0.1,
+                    complex: 0.25,
+                    chaotic: 0.5
+                }
             }
+        };
+
+        const MAZE_CONTENTS = {
+            monsters: ['Goblin', 'Skeleton', 'Orc', 'Zombie', 'Spider', 'Rat', 'Bat', 'Slime', 'Kobold', 'Bugbear'],
+            items: ['Gold Coins', 'Potion', 'Sword', 'Shield', 'Key', 'Scroll', 'Gem', 'Ring', 'Armor', 'Torch'],
+            npcs: ['Merchant', 'Quest Giver', 'Guide', 'Innkeeper', 'Healer', 'Mysterious Stranger', 'Prisoner', 'Guard']
         };
 
         // ============================================
@@ -372,14 +541,16 @@
             constructor(canvasId) {
                 this.canvas = document.getElementById(canvasId);
                 this.ctx = this.canvas.getContext('2d');
+                this.contents = [];
             }
 
-            generate(width, height, algorithm) {
+            generate(width, height, algorithm, complexity, contentOptions) {
                 this.width = width;
                 this.height = height;
                 this.cellSize = CONFIG.maze.cellSize;
                 this.canvas.width = width * this.cellSize;
                 this.canvas.height = height * this.cellSize;
+                this.contents = [];
 
                 this.grid = [];
                 for (let y = 0; y < height; y++) {
@@ -405,7 +576,83 @@
                         break;
                 }
 
+                this.addExtraPaths(complexity);
+                this.placeContents(contentOptions);
                 this.draw();
+            }
+
+            addExtraPaths(complexity) {
+                const extraPaths = Math.floor(this.width * this.height * CONFIG.maze.complexity[complexity]);
+                for (let i = 0; i < extraPaths; i++) {
+                    const x = Math.floor(Math.random() * this.width);
+                    const y = Math.floor(Math.random() * this.height);
+                    const cell = this.grid[y][x];
+                    const neighbors = this.getAllNeighbors(cell);
+                    if (neighbors.length > 0) {
+                        const neighbor = neighbors[Math.floor(Math.random() * neighbors.length)];
+                        this.removeWall(cell, neighbor);
+                    }
+                }
+            }
+
+            placeContents(options) {
+                const availableCells = [];
+                for (let y = 0; y < this.height; y++) {
+                    for (let x = 0; x < this.width; x++) {
+                        if ((x !== 0 || y !== 0) && (x !== this.width - 1 || y !== this.height - 1)) {
+                            availableCells.push({ x, y });
+                        }
+                    }
+                }
+
+                this.shuffleArray(availableCells);
+
+                if (options.monsters.enabled) {
+                    const count = Math.floor(availableCells.length * options.monsters.chance / 100);
+                    for (let i = 0; i < count && i < availableCells.length; i++) {
+                        this.contents.push({
+                            type: 'monster',
+                            x: availableCells[i].x,
+                            y: availableCells[i].y,
+                            name: MAZE_CONTENTS.monsters[Math.floor(Math.random() * MAZE_CONTENTS.monsters.length)]
+                        });
+                    }
+                }
+
+                if (options.items.enabled) {
+                    const count = Math.floor(availableCells.length * options.items.chance / 100);
+                    for (let i = 0; i < count && i < availableCells.length; i++) {
+                        const idx = availableCells.length - 1 - i;
+                        this.contents.push({
+                            type: 'item',
+                            x: availableCells[idx].x,
+                            y: availableCells[idx].y,
+                            name: MAZE_CONTENTS.items[Math.floor(Math.random() * MAZE_CONTENTS.items.length)]
+                        });
+                    }
+                }
+
+                if (options.npcs.enabled) {
+                    const count = Math.floor(availableCells.length * options.npcs.chance / 100);
+                    for (let i = 0; i < count && i < availableCells.length; i++) {
+                        const idx = Math.floor(availableCells.length / 2) + i;
+                        if (idx < availableCells.length) {
+                            this.contents.push({
+                                type: 'npc',
+                                x: availableCells[idx].x,
+                                y: availableCells[idx].y,
+                                name: MAZE_CONTENTS.npcs[Math.floor(Math.random() * MAZE_CONTENTS.npcs.length)]
+                            });
+                        }
+                    }
+                }
+            }
+
+            shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
             }
 
             recursiveBacktracker() {
@@ -591,6 +838,21 @@
                     }
                 }
 
+                this.contents.forEach(item => {
+                    const cx = (item.x + 0.5) * this.cellSize;
+                    const cy = (item.y + 0.5) * this.cellSize;
+                    let color;
+
+                    if (item.type === 'monster') color = CONFIG.colors.monster;
+                    else if (item.type === 'item') color = CONFIG.colors.item;
+                    else if (item.type === 'npc') color = CONFIG.colors.npc;
+
+                    this.ctx.fillStyle = color;
+                    this.ctx.beginPath();
+                    this.ctx.arc(cx, cy, this.cellSize / 4, 0, Math.PI * 2);
+                    this.ctx.fill();
+                });
+
                 this.ctx.fillStyle = CONFIG.colors.entrance;
                 this.ctx.beginPath();
                 this.ctx.arc(this.cellSize / 2, this.cellSize / 2, this.cellSize / 3, 0, Math.PI * 2);
@@ -605,6 +867,45 @@
                 );
                 this.ctx.fill();
             }
+
+            exportSVG() {
+                const w = this.width * this.cellSize;
+                const h = this.height * this.cellSize;
+                const cs = this.cellSize;
+                const ww = CONFIG.maze.wallWidth;
+
+                let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+                svg += `<rect width="${w}" height="${h}" fill="${CONFIG.colors.path}"/>`;
+
+                for (let y = 0; y < this.height; y++) {
+                    for (let x = 0; x < this.width; x++) {
+                        const cell = this.grid[y][x];
+                        const cx = x * cs;
+                        const cy = y * cs;
+
+                        if (cell.walls.top) svg += `<line x1="${cx}" y1="${cy}" x2="${cx + cs}" y2="${cy}" stroke="${CONFIG.colors.wall}" stroke-width="${ww}"/>`;
+                        if (cell.walls.right) svg += `<line x1="${cx + cs}" y1="${cy}" x2="${cx + cs}" y2="${cy + cs}" stroke="${CONFIG.colors.wall}" stroke-width="${ww}"/>`;
+                        if (cell.walls.bottom) svg += `<line x1="${cx}" y1="${cy + cs}" x2="${cx + cs}" y2="${cy + cs}" stroke="${CONFIG.colors.wall}" stroke-width="${ww}"/>`;
+                        if (cell.walls.left) svg += `<line x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy + cs}" stroke="${CONFIG.colors.wall}" stroke-width="${ww}"/>`;
+                    }
+                }
+
+                this.contents.forEach(item => {
+                    const cx = (item.x + 0.5) * cs;
+                    const cy = (item.y + 0.5) * cs;
+                    let color;
+                    if (item.type === 'monster') color = CONFIG.colors.monster;
+                    else if (item.type === 'item') color = CONFIG.colors.item;
+                    else if (item.type === 'npc') color = CONFIG.colors.npc;
+                    svg += `<circle cx="${cx}" cy="${cy}" r="${cs / 4}" fill="${color}"/>`;
+                });
+
+                svg += `<circle cx="${cs / 2}" cy="${cs / 2}" r="${cs / 3}" fill="${CONFIG.colors.entrance}"/>`;
+                svg += `<circle cx="${(this.width - 0.5) * cs}" cy="${(this.height - 0.5) * cs}" r="${cs / 3}" fill="${CONFIG.colors.exit}"/>`;
+                svg += '</svg>';
+
+                return svg;
+            }
         }
 
         // ============================================
@@ -616,19 +917,62 @@
             initTabs();
             mazeGenerator = new MazeGenerator('maze-canvas');
 
+            document.getElementById('monster-chance').addEventListener('input', (e) => {
+                document.getElementById('monster-chance-val').textContent = e.target.value + '%';
+            });
+            document.getElementById('item-chance').addEventListener('input', (e) => {
+                document.getElementById('item-chance-val').textContent = e.target.value + '%';
+            });
+            document.getElementById('npc-chance').addEventListener('input', (e) => {
+                document.getElementById('npc-chance-val').textContent = e.target.value + '%';
+            });
+
             const generateBtn = document.getElementById('generate-maze');
             generateBtn.addEventListener('click', () => {
                 const width = parseInt(document.getElementById('maze-width').value);
                 const height = parseInt(document.getElementById('maze-height').value);
                 const algorithm = document.getElementById('maze-algorithm').value;
+                const complexity = document.getElementById('maze-complexity').value;
+
+                const contentOptions = {
+                    monsters: {
+                        enabled: document.getElementById('include-monsters').checked,
+                        chance: parseInt(document.getElementById('monster-chance').value)
+                    },
+                    items: {
+                        enabled: document.getElementById('include-items').checked,
+                        chance: parseInt(document.getElementById('item-chance').value)
+                    },
+                    npcs: {
+                        enabled: document.getElementById('include-npcs').checked,
+                        chance: parseInt(document.getElementById('npc-chance').value)
+                    }
+                };
 
                 const w = Math.max(CONFIG.maze.minSize, Math.min(CONFIG.maze.maxSize, width));
                 const h = Math.max(CONFIG.maze.minSize, Math.min(CONFIG.maze.maxSize, height));
 
-                mazeGenerator.generate(w, h, algorithm);
+                mazeGenerator.generate(w, h, algorithm, complexity, contentOptions);
             });
 
-            mazeGenerator.generate(CONFIG.maze.defaultWidth, CONFIG.maze.defaultHeight, 'recursive-backtracker');
+            document.getElementById('save-maze').addEventListener('click', () => {
+                const svg = mazeGenerator.exportSVG();
+                const blob = new Blob([svg], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'maze.svg';
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+
+            mazeGenerator.generate(
+                CONFIG.maze.defaultWidth,
+                CONFIG.maze.defaultHeight,
+                'recursive-backtracker',
+                'moderate',
+                { monsters: { enabled: true, chance: 15 }, items: { enabled: true, chance: 10 }, npcs: { enabled: false, chance: 5 } }
+            );
         }
 
         document.addEventListener('DOMContentLoaded', init);
