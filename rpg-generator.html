@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG Generator</title>
+    <style>
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-tertiary: #0f3460;
+            --text-primary: #e8e8e8;
+            --text-secondary: #a0a0a0;
+            --accent: #e94560;
+            --accent-hover: #ff6b6b;
+            --border: #2a2a4a;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 220px;
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.2rem;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .nav-tabs {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 0;
+        }
+
+        .nav-tab {
+            padding: 14px 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+            color: var(--text-secondary);
+        }
+
+        .nav-tab:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .nav-tab.active {
+            background-color: var(--bg-tertiary);
+            border-left-color: var(--accent);
+            color: var(--text-primary);
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .content-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--border);
+            background-color: var(--bg-secondary);
+        }
+
+        . {
+            font-sizecontent-header h2: 1.5rem;
+            font-weight: 500;
+        }
+
+        .content-body {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .controls-panel {
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .controls-panel h3 {
+            margin-bottom: 15px;
+            font-size: 1rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .control-group input[type="number"],
+        .control-group select {
+            width: 100%;
+            padding: 10px 12px;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .control-group input[type="number"]:focus,
+        .control-group select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .canvas-container {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .output-panel {
+            margin-top: 20px;
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .output-panel h3 {
+            margin-bottom: 15px;
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .output-text {
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>RPG Generator</h1>
+            </div>
+            <nav class="nav-tabs">
+                <div class="nav-tab active" data-tab="maze">Maze</div>
+                <div class="nav-tab" data-tab="map">Map</div>
+                <div class="nav-tab" data-tab="building">Building</div>
+                <div class="nav-tab" data-tab="dungeon">Dungeon</div>
+                <div class="nav-tab" data-tab="monster">Monster</div>
+                <div class="nav-tab" data-tab="player">Player (5E)</div>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <h2 id="tab-title">Maze Generator</h2>
+            </header>
+            <div class="content-body">
+                <div class="tab-content active" id="maze-content">
+                    <div class="controls-panel">
+                        <h3>Maze Settings</h3>
+                        <div class="control-group">
+                            <label for="maze-width">Width (cells)</label>
+                            <input type="number" id="maze-width" value="20" min="5" max="50">
+                        </div>
+                        <div class="control-group">
+                            <label for="maze-height">Height (cells)</label>
+                            <input type="number" id="maze-height" value="20" min="5" max="50">
+                        </div>
+                        <div class="control-group">
+                            <label for="maze-algorithm">Algorithm</label>
+                            <select id="maze-algorithm">
+                                <option value="recursive-backtracker">Recursive Backtracker</option>
+                                <option value="prims">Prim's Algorithm</option>
+                                <option value="kruskals">Kruskal's Algorithm</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" id="generate-maze">Generate Maze</button>
+                    </div>
+                    <div class="canvas-container">
+                        <canvas id="maze-canvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="map-content">
+                    <div class="controls-panel">
+                        <h3>Map Settings</h3>
+                        <div class="control-group">
+                            <label>Coming soon...</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="building-content">
+                    <div class="controls-panel">
+                        <h3>Building Settings</h3>
+                        <div class="control-group">
+                            <label>Coming soon...</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="dungeon-content">
+                    <div class="controls-panel">
+                        <h3>Dungeon Settings</h3>
+                        <div class="control-group">
+                            <label>Coming soon...</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="monster-content">
+                    <div class="controls-panel">
+                        <h3>Monster Settings</h3>
+                        <div class="control-group">
+                            <label>Coming soon...</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="player-content">
+                    <div class="controls-panel">
+                        <h3>Player Character Settings</h3>
+                        <div class="control-group">
+                            <label>Coming soon...</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURATION / SETTINGS
+        // ============================================
+        const CONFIG = {
+            colors: {
+                background: '#1a1a2e',
+                wall: '#e8e8e8',
+                path: '#16213e',
+                entrance: '#e94560',
+                exit: '#4ade80',
+                grid: '#2a2a4a'
+            },
+            maze: {
+                cellSize: 20,
+                wallWidth: 2,
+                defaultWidth: 20,
+                defaultHeight: 20,
+                maxSize: 50,
+                minSize: 5
+            }
+        };
+
+        // ============================================
+        // TAB NAVIGATION
+        // ============================================
+        const tabNames = {
+            maze: 'Maze Generator',
+            map: 'Map Generator',
+            building: 'Building Generator',
+            dungeon: 'Dungeon Generator',
+            monster: 'Monster Generator',
+            player: 'Player (5E) Generator'
+        };
+
+        function initTabs() {
+            const tabs = document.querySelectorAll('.nav-tab');
+            const titleEl = document.getElementById('tab-title');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.dataset.tab;
+
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    document.getElementById(`${tabId}-content`).classList.add('active');
+
+                    titleEl.textContent = tabNames[tabId];
+                });
+            });
+        }
+
+        // ============================================
+        // MAZE GENERATOR
+        // ============================================
+        class MazeGenerator {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+            }
+
+            generate(width, height, algorithm) {
+                this.width = width;
+                this.height = height;
+                this.cellSize = CONFIG.maze.cellSize;
+                this.canvas.width = width * this.cellSize;
+                this.canvas.height = height * this.cellSize;
+
+                this.grid = [];
+                for (let y = 0; y < height; y++) {
+                    this.grid[y] = [];
+                    for (let x = 0; x < width; x++) {
+                        this.grid[y][x] = {
+                            x, y,
+                            walls: { top: true, right: true, bottom: true, left: true },
+                            visited: false
+                        };
+                    }
+                }
+
+                switch(algorithm) {
+                    case 'recursive-backtracker':
+                        this.recursiveBacktracker();
+                        break;
+                    case 'prims':
+                        this.primsAlgorithm();
+                        break;
+                    case 'kruskals':
+                        this.kruskalsAlgorithm();
+                        break;
+                }
+
+                this.draw();
+            }
+
+            recursiveBacktracker() {
+                const stack = [];
+                let current = this.grid[0][0];
+                current.visited = true;
+                stack.push(current);
+
+                while (stack.length > 0) {
+                    current = stack[stack.length - 1];
+                    const neighbors = this.getUnvisitedNeighbors(current);
+
+                    if (neighbors.length > 0) {
+                        const next = neighbors[Math.floor(Math.random() * neighbors.length)];
+                        this.removeWall(current, next);
+                        next.visited = true;
+                        stack.push(next);
+                    } else {
+                        stack.pop();
+                    }
+                }
+            }
+
+            primsAlgorithm() {
+                const walls = [];
+                let firstCell = this.grid[0][0];
+                firstCell.visited = true;
+
+                this.addPrimWalls(firstCell, walls);
+
+                while (walls.length > 0) {
+                    const randIndex = Math.floor(Math.random() * walls.length);
+                    const wall = walls[randIndex];
+                    walls.splice(randIndex, 1);
+
+                    const cell1 = wall.cell;
+                    const cell2 = wall.neighbor;
+
+                    if (!cell1.visited && !cell2.visited) {
+                        this.removeWall(cell1, cell2);
+                        cell2.visited = true;
+                        this.addPrimWalls(cell2, walls);
+                    } else if (cell1.visited && !cell2.visited) {
+                        this.removeWall(cell1, cell2);
+                        cell2.visited = true;
+                        this.addPrimWalls(cell2, walls);
+                    } else if (!cell1.visited && cell2.visited) {
+                        this.removeWall(cell1, cell2);
+                        cell1.visited = true;
+                        this.addPrimWalls(cell1, walls);
+                    }
+                }
+            }
+
+            addPrimWalls(cell, walls) {
+                const neighbors = this.getAllNeighbors(cell);
+                neighbors.forEach(n => {
+                    if (!n.visited) {
+                        walls.push({ cell, neighbor: n });
+                    }
+                });
+            }
+
+            kruskalsAlgorithm() {
+                const edges = [];
+                const sets = [];
+
+                for (let y = 0; y < this.height; y++) {
+                    for (let x = 0; x < this.width; x++) {
+                        sets.push([this.grid[y][x]]);
+                    }
+                }
+
+                for (let y = 0; y < this.height; y++) {
+                    for (let x = 0; x < this.width; x++) {
+                        const cell = this.grid[y][x];
+                        if (x < this.width - 1) {
+                            edges.push({ a: cell, b: this.grid[y][x + 1], dir: 'right' });
+                        }
+                        if (y < this.height - 1) {
+                            edges.push({ a: cell, b: this.grid[y + 1][x], dir: 'bottom' });
+                        }
+                    }
+                }
+
+                edges.sort(() => Math.random() - 0.5);
+
+                const findSet = (cell) => {
+                    for (let i = 0; i < sets.length; i++) {
+                        if (sets[i].includes(cell)) return i;
+                    }
+                    return -1;
+                };
+
+                const mergeSets = (set1, set2) => {
+                    sets[set1] = sets[set1].concat(sets[set2]);
+                    sets.splice(set2, 1);
+                };
+
+                edges.forEach(edge => {
+                    const setA = findSet(edge.a);
+                    const setB = findSet(edge.b);
+
+                    if (setA !== setB) {
+                        this.removeWall(edge.a, edge.b);
+                        mergeSets(setA, setB);
+                    }
+                });
+            }
+
+            getUnvisitedNeighbors(cell) {
+                const neighbors = [];
+                const { x, y } = cell;
+
+                if (y > 0 && !this.grid[y - 1][x].visited) neighbors.push(this.grid[y - 1][x]);
+                if (x < this.width - 1 && !this.grid[y][x + 1].visited) neighbors.push(this.grid[y][x + 1]);
+                if (y < this.height - 1 && !this.grid[y + 1][x].visited) neighbors.push(this.grid[y + 1][x]);
+                if (x > 0 && !this.grid[y][x - 1].visited) neighbors.push(this.grid[y][x - 1]);
+
+                return neighbors;
+            }
+
+            getAllNeighbors(cell) {
+                const neighbors = [];
+                const { x, y } = cell;
+
+                if (y > 0) neighbors.push(this.grid[y - 1][x]);
+                if (x < this.width - 1) neighbors.push(this.grid[y][x + 1]);
+                if (y < this.height - 1) neighbors.push(this.grid[y + 1][x]);
+                if (x > 0) neighbors.push(this.grid[y][x - 1]);
+
+                return neighbors;
+            }
+
+            removeWall(a, b) {
+                const dx = b.x - a.x;
+                const dy = b.y - a.y;
+
+                if (dx === 1) { a.walls.right = false; b.walls.left = false; }
+                if (dx === -1) { a.walls.left = false; b.walls.right = false; }
+                if (dy === 1) { a.walls.bottom = false; b.walls.top = false; }
+                if (dy === -1) { a.walls.top = false; b.walls.bottom = false; }
+            }
+
+            draw() {
+                this.ctx.fillStyle = CONFIG.colors.path;
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                this.ctx.strokeStyle = CONFIG.colors.wall;
+                this.ctx.lineWidth = CONFIG.maze.wallWidth;
+                this.ctx.lineCap = 'square';
+
+                for (let y = 0; y < this.height; y++) {
+                    for (let x = 0; x < this.width; x++) {
+                        const cell = this.grid[y][x];
+                        const cx = x * this.cellSize;
+                        const cy = y * this.cellSize;
+
+                        if (cell.walls.top) {
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(cx, cy);
+                            this.ctx.lineTo(cx + this.cellSize, cy);
+                            this.ctx.stroke();
+                        }
+                        if (cell.walls.right) {
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(cx + this.cellSize, cy);
+                            this.ctx.lineTo(cx + this.cellSize, cy + this.cellSize);
+                            this.ctx.stroke();
+                        }
+                        if (cell.walls.bottom) {
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(cx, cy + this.cellSize);
+                            this.ctx.lineTo(cx + this.cellSize, cy + this.cellSize);
+                            this.ctx.stroke();
+                        }
+                        if (cell.walls.left) {
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(cx, cy);
+                            this.ctx.lineTo(cx, cy + this.cellSize);
+                            this.ctx.stroke();
+                        }
+                    }
+                }
+
+                this.ctx.fillStyle = CONFIG.colors.entrance;
+                this.ctx.beginPath();
+                this.ctx.arc(this.cellSize / 2, this.cellSize / 2, this.cellSize / 3, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = CONFIG.colors.exit;
+                this.ctx.beginPath();
+                this.ctx.arc(
+                    (this.width - 0.5) * this.cellSize,
+                    (this.height - 0.5) * this.cellSize,
+                    this.cellSize / 3, 0, Math.PI * 2
+                );
+                this.ctx.fill();
+            }
+        }
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        let mazeGenerator;
+
+        function init() {
+            initTabs();
+            mazeGenerator = new MazeGenerator('maze-canvas');
+
+            const generateBtn = document.getElementById('generate-maze');
+            generateBtn.addEventListener('click', () => {
+                const width = parseInt(document.getElementById('maze-width').value);
+                const height = parseInt(document.getElementById('maze-height').value);
+                const algorithm = document.getElementById('maze-algorithm').value;
+
+                const w = Math.max(CONFIG.maze.minSize, Math.min(CONFIG.maze.maxSize, width));
+                const h = Math.max(CONFIG.maze.minSize, Math.min(CONFIG.maze.maxSize, height));
+
+                mazeGenerator.generate(w, h, algorithm);
+            });
+
+            mazeGenerator.generate(CONFIG.maze.defaultWidth, CONFIG.maze.defaultHeight, 'recursive-backtracker');
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
