@@ -302,10 +302,189 @@
             height: 12px;
         }
 
-        .legend-color {
-            width: 12px;
-            height: 12px;
-            border-radius: 2px;
+        .monster-panel {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .monster-list-panel {
+            width: 280px;
+            flex-shrink: 0;
+        }
+
+        .monster-list {
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg-primary);
+        }
+
+        .monster-list-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+
+        .monster-list-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .monster-list-item.selected {
+            background: var(--bg-tertiary);
+            border-left: 3px solid var(--accent);
+        }
+
+        .monster-list-item .cr {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            float: right;
+        }
+
+        .monster-list-item .name {
+            font-weight: 500;
+        }
+
+        .monster-list-item .type {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .monster-stats-panel {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .monster-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .monster-name-input {
+            font-size: 1.5rem;
+            font-weight: 600;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid var(--border);
+            color: var(--text-primary);
+            padding: 5px 0;
+            flex: 1;
+        }
+
+        .monster-name-input:focus {
+            outline: none;
+            border-bottom-color: var(--accent);
+        }
+
+        .monster-type-input {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            padding: 8px 12px;
+            font-size: 0.9rem;
+        }
+
+        .stat-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .stat-label {
+            width: 80px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .stat-input {
+            width: 60px;
+            padding: 8px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            text-align: center;
+            font-size: 0.95rem;
+        }
+
+        .stat-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .stat-mod {
+            width: 40px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .stat-block {
+            display: flex;
+            gap: 8px;
+        }
+
+        .stat-block .stat-input {
+            width: 50px;
+        }
+
+        .hp-input {
+            width: 80px !important;
+        }
+
+        .monster-attributes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .attr-group {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 12px;
+        }
+
+        .attr-group h4 {
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+
+        .attr-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .attr-row label {
+            width: 30px;
+            font-weight: 600;
+        }
+
+        .monster-search {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+
+        .monster-search:focus {
+            outline: none;
+            border-color: var(--accent);
         }
     </style>
 </head>
@@ -466,10 +645,122 @@
                 </div>
 
                 <div class="tab-content" id="monster-content">
-                    <div class="controls-panel">
-                        <h3>Monster Settings</h3>
-                        <div class="control-group">
-                            <label>Coming soon...</label>
+                    <div class="monster-panel">
+                        <div class="monster-list-panel">
+                            <input type="text" class="monster-search" id="monster-search" placeholder="Search monsters...">
+                            <div class="monster-list" id="monster-list"></div>
+                        </div>
+                        <div class="monster-stats-panel" id="monster-stats-panel">
+                            <div class="monster-header">
+                                <input type="text" class="monster-name-input" id="monster-name" value="Select a monster">
+                                <select class="monster-type-input" id="monster-size">
+                                    <option value="Tiny">Tiny</option>
+                                    <option value="Small">Small</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Large">Large</option>
+                                    <option value="Huge">Huge</option>
+                                    <option value="Gargantuan">Gargantuan</option>
+                                </select>
+                                <select class="monster-type-input" id="monster-type">
+                                    <option value="aberration">Aberration</option>
+                                    <option value="beast">Beast</option>
+                                    <option value="celestial">Celestial</option>
+                                    <option value="construct">Construct</option>
+                                    <option value="dragon">Dragon</option>
+                                    <option value="elemental">Elemental</option>
+                                    <option value="fey">Fey</option>
+                                    <option value="fiend">Fiend</option>
+                                    <option value="giant">Giant</option>
+                                    <option value="humanoid">Humanoid</option>
+                                    <option value="monstrosity">Monstrosity</option>
+                                    <option value="ooze">Ooze</option>
+                                    <option value="plant">Plant</option>
+                                    <option value="undead">Undead</option>
+                                </select>
+                            </div>
+
+                            <div class="stat-row">
+                                <span class="stat-label">AC</span>
+                                <input type="number" class="stat-input hp-input" id="monster-ac" value="10">
+                                <span class="stat-label" style="width: 50px;">HP</span>
+                                <input type="number" class="stat-input hp-input" id="monster-hp" value="10">
+                            </div>
+
+                            <div class="stat-row">
+                                <span class="stat-label">Speed</span>
+                                <input type="text" class="stat-input" style="width: 150px;" id="monster-speed" value="30 ft.">
+                            </div>
+
+                            <div class="stat-row">
+                                <span class="stat-label">CR</span>
+                                <input type="text" class="stat-input" style="width: 60px;" id="monster-cr" value="1">
+                                <span class="stat-label" style="width: 50px;">XP</span>
+                                <input type="number" class="stat-input" style="width: 80px;" id="monster-xp" value="200">
+                            </div>
+
+                            <div class="monster-attributes">
+                                <div class="attr-group">
+                                    <h4>Ability Scores</h4>
+                                    <div class="attr-row">
+                                        <label>STR</label>
+                                        <input type="number" class="stat-input" id="monster-str" value="10">
+                                        <span class="stat-mod" id="monster-str-mod">+0</span>
+                                    </div>
+                                    <div class="attr-row">
+                                        <label>DEX</label>
+                                        <input type="number" class="stat-input" id="monster-dex" value="10">
+                                        <span class="stat-mod" id="monster-dex-mod">+0</span>
+                                    </div>
+                                    <div class="attr-row">
+                                        <label>CON</label>
+                                        <input type="number" class="stat-input" id="monster-con" value="10">
+                                        <span class="stat-mod" id="monster-con-mod">+0</span>
+                                    </div>
+                                    <div class="attr-row">
+                                        <label>INT</label>
+                                        <input type="number" class="stat-input" id="monster-int" value="10">
+                                        <span class="stat-mod" id="monster-int-mod">+0</span>
+                                    </div>
+                                    <div class="attr-row">
+                                        <label>WIS</label>
+                                        <input type="number" class="stat-input" id="monster-wis" value="10">
+                                        <span class="stat-mod" id="monster-wis-mod">+0</span>
+                                    </div>
+                                    <div class="attr-row">
+                                        <label>CHA</label>
+                                        <input type="number" class="stat-input" id="monster-cha" value="10">
+                                        <span class="stat-mod" id="monster-cha-mod">+0</span>
+                                    </div>
+                                </div>
+
+                                <div class="attr-group">
+                                    <h4>Saving Throws</h4>
+                                    <div class="attr-row">
+                                        <label>STR</label>
+                                        <input type="text" class="stat-input" style="width: 50px;" id="monster-save-str" value="+0">
+                                    </div>
+                                    <div class="attr-row">
+                                        <label>DEX</label>
+                                        <input type="text" class="stat-input" style="width: 50px;" id="monster-save-dex" value="+0">
+                                    </div>
+                                    <div class="attr-row">
+                                        <label>CON</label>
+                                        <input type="text" class="stat-input" style="width: 50px;" id="monster-save-con" value="+0">
+                                    </div>
+                                    <div class="attr-row">
+                                        <label>INT</label>
+                                        <input type="text" class="stat-input" style="width: 50px;" id="monster-save-int" value="+0">
+                                    </div>
+                                    <div class="attr-row">
+                                        <label>WIS</label>
+                                        <input type="text" class="stat-input" style="width: 50px;" id="monster-save-wis" value="+0">
+                                    </div>
+                                    <div class="attr-row">
+                                        <label>CHA</label>
+                                        <input type="text" class="stat-input" style="width: 50px;" id="monster-save-cha" value="+0">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
