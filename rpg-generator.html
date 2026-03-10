@@ -763,6 +763,9 @@
                             </div>
                         </div>
                     </div>
+                    <div class="btn-row">
+                        <button class="btn btn-secondary" id="export-monster-html">Export to HTML</button>
+                    </div>
                 </div>
 
                 <div class="tab-content" id="player-content">
@@ -2066,6 +2069,195 @@ const MONSTERS = {
                     }
                 }
                 populateMonsterList(filteredMonsters);
+            });
+
+                        document.getElementById('export-monster-html').addEventListener('click', () => {
+                const name = document.getElementById('monster-name').value;
+                const size = document.getElementById('monster-size').value;
+                const type = document.getElementById('monster-type').value;
+                const ac = document.getElementById('monster-ac').value;
+                const hp = document.getElementById('monster-hp').value;
+                const speed = document.getElementById('monster-speed').value;
+                const cr = document.getElementById('monster-cr').value;
+                const xp = document.getElementById('monster-xp').value;
+
+                const str = document.getElementById('monster-str').value;
+                const dex = document.getElementById('monster-dex').value;
+                const con = document.getElementById('monster-con').value;
+                const int = document.getElementById('monster-int').value;
+                const wis = document.getElementById('monster-wis').value;
+                const cha = document.getElementById('monster-cha').value;
+
+                const str_mod = document.getElementById('monster-str-mod').textContent;
+                const dex_mod = document.getElementById('monster-dex-mod').textContent;
+                const con_mod = document.getElementById('monster-con-mod').textContent;
+                const int_mod = document.getElementById('monster-int-mod').textContent;
+                const wis_mod = document.getElementById('monster-wis-mod').textContent;
+                const cha_mod = document.getElementById('monster-cha-mod').textContent;
+
+                const save_str = document.getElementById('monster-save-str').value;
+                const save_dex = document.getElementById('monster-save-dex').value;
+                const save_con = document.getElementById('monster-save-con').value;
+                const save_int = document.getElementById('monster-save-int').value;
+                const save_wis = document.getElementById('monster-save-wis').value;
+                const save_cha = document.getElementById('monster-save-cha').value;
+
+                const styles = `
+                    :root {
+                        --bg-primary: #0d0d0d;
+                        --bg-secondary: #1a1512;
+                        --bg-tertiary: #2a2018;
+                        --text-primary: #d4c4a8;
+                        --text-secondary: #8b7355;
+                        --accent: #c9a227;
+                        --accent-hover: #e6b82e;
+                        --border: #3d3025;
+                        --shadow: rgba(0, 0, 0, 0.5);
+                    }
+
+                    body {
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        background-color: var(--bg-primary);
+                        color: var(--text-primary);
+                        margin: 0;
+                        padding: 20px;
+                        line-height: 1.6;
+                    }
+
+                    .stat-block-container {
+                        background-color: var(--bg-secondary);
+                        border: 1px solid var(--border);
+                        border-radius: 8px;
+                        padding: 20px;
+                        max-width: 800px;
+                        margin: 20px auto;
+                        box-shadow: 0 4px 8px var(--shadow);
+                    }
+
+                    h1 {
+                        color: var(--accent);
+                        font-size: 2em;
+                        border-bottom: 2px solid var(--accent);
+                        padding-bottom: 10px;
+                        margin-bottom: 20px;
+                    }
+
+                    h2 {
+                        color: var(--text-primary);
+                        font-size: 1.5em;
+                        border-bottom: 1px solid var(--border);
+                        padding-bottom: 5px;
+                        margin-top: 20px;
+                        margin-bottom: 15px;
+                    }
+
+                    p {
+                        margin-bottom: 10px;
+                    }
+
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 15px;
+                        background-color: var(--bg-primary);
+                        border-radius: 4px;
+                        overflow: hidden;
+                    }
+
+                    th, td {
+                        padding: 10px 15px;
+                        text-align: left;
+                        border-bottom: 1px solid var(--border);
+                        color: var(--text-primary);
+                    }
+
+                    th {
+                        background-color: var(--bg-tertiary);
+                        color: var(--accent);
+                        text-transform: uppercase;
+                        font-size: 0.9em;
+                    }
+
+                    tr:last-child td {
+                        border-bottom: none;
+                    }
+
+                    .ability-scores {
+                        display: flex;
+                        justify-content: space-around;
+                        text-align: center;
+                        background-color: var(--bg-primary);
+                        border: 1px solid var(--border);
+                        border-radius: 4px;
+                        padding: 10px 0;
+                        margin-bottom: 15px;
+                    }
+
+                    .ability-score-item {
+                        flex: 1;
+                    }
+
+                    .ability-score-item strong {
+                        display: block;
+                        color: var(--accent);
+                        font-size: 1.1em;
+                    }
+
+                    .ability-score-item span {
+                        font-size: 0.9em;
+                        color: var(--text-secondary);
+                    }
+                `;
+
+                const htmlContent = `
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>${name} Stat Block</title>
+                        <style>${styles}</style>
+                    </head>
+                    <body>
+                        <div class="stat-block-container">
+                            <h1>${name}</h1>
+                            <p><i>${size} ${type}</i></p>
+                            
+                            <h2>Basic Information</h2>
+                            <table>
+                                <tr><th>Property</th><th>Value</th></tr>
+                                <tr><td>Armor Class</td><td>${ac}</td></tr>
+                                <tr><td>Hit Points</td><td>${hp}</td></tr>
+                                <tr><td>Speed</td><td>${speed}</td></tr>
+                                <tr><td>Challenge Rating</td><td>${cr} (${xp} XP)</td></tr>
+                            </table>
+
+                            <h2>Ability Scores</h2>
+                            <div class="ability-scores">
+                                <div class="ability-score-item"><strong>STR</strong><span>${str} (${str_mod})</span></div>
+                                <div class="ability-score-item"><strong>DEX</strong><span>${dex} (${dex_mod})</span></div>
+                                <div class="ability-score-item"><strong>CON</strong><span>${con} (${con_mod})</span></div>
+                                <div class="ability-score-item"><strong>INT</strong><span>${int} (${int_mod})</span></div>
+                                <div class="ability-score-item"><strong>WIS</strong><span>${wis} (${wis_mod})</span></div>
+                                <div class="ability-score-item"><strong>CHA</strong><span>${cha} (${cha_mod})</span></div>
+                            </div>
+
+                            <h2>Saving Throws</h2>
+                            <p>STR ${save_str}, DEX ${save_dex}, CON ${save_con}, INT ${save_int}, WIS ${save_wis}, CHA ${save_cha}</p>
+
+                            <!-- Add more sections for Skills, Senses, Languages, Traits, Actions, etc. if needed -->
+                        </div>
+                    </body>
+                    </html>
+                `;
+
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `${name.toLowerCase().replace(/\s+/g, '-')}-stat-block.html`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
             });
 
             mazeGenerator.generate(
