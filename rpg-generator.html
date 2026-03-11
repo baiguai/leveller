@@ -1762,39 +1762,45 @@ const MONSTERS = {
             dm: 'DM Tools'
         };
 
+        function activateTab(tabElement) {
+            const tabId = tabElement.dataset.tab;
+
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            tabElement.classList.add('active');
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tabId}-content`).classList.add('active');
+
+            document.getElementById('tab-title').textContent = tabNames[tabId];
+
+            // Enable/disable DM Tools keybindings based on active tab
+            if (dmTools) { // Check if dmTools is initialized
+                if (tabId === 'dm') {
+                    dmTools.enableKeybindings();
+                } else {
+                    dmTools.disableKeybindings();
+                }
+            }
+
+            if (tabId === 'monster') {
+                loadMonsters();
+            }
+        }
+
         function initTabs() {
             const tabs = document.querySelectorAll('.nav-tab');
-            const titleEl = document.getElementById('tab-title');
-
+            
             tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const tabId = tab.dataset.tab;
-
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-
-                    document.querySelectorAll('.tab-content').forEach(content => {
-                        content.classList.remove('active');
-                    });
-                    document.getElementById(`${tabId}-content`).classList.add('active');
-
-                    titleEl.textContent = tabNames[tabId];
-
-                    // Enable/disable DM Tools keybindings based on active tab
-                    if (dmTools) { // Check if dmTools is initialized
-                        if (tabId === 'dm') {
-                            dmTools.enableKeybindings();
-                        } else {
-                            dmTools.disableKeybindings();
-                        }
-                    }
-
-
-                    if (tabId === 'monster') {
-                        loadMonsters();
-                    }
-                });
+                tab.addEventListener('click', () => activateTab(tab));
             });
+
+            // Activate the default tab on initial load
+            const initialActiveTab = document.querySelector('.nav-tab.active');
+            if (initialActiveTab) {
+                activateTab(initialActiveTab);
+            }
         }
 
         // ============================================
