@@ -2492,34 +2492,16 @@ const MONSTERS = {
 
                 // Place secret passages
                 if (features.secrets && availableFloorCells.length > 0) {
-                    const numSecretsSpots = Math.floor(availableFloorCells.length * CONFIG.dungeon.featureChance); // More potential starting points
-                    for (let i = 0; i < numSecretsSpots && availableFloorCells.length > 0; i++) {
-                        const startCell = availableFloorCells.pop();
-                        if (startCell && this.grid[startCell.y][startCell.x] === 1) { // Ensure it's a floor tile
-                            this.grid[startCell.y][startCell.x] = 6; // Mark start of secret passage
-                            // Try to extend the secret passage
-                            const directions = [{dx: 1, dy: 0}, {dx: -1, dy: 0}, {dx: 0, dy: 1}, {dx: 0, dy: -1}];
-                            this.shuffleArray(directions); // Randomize direction
-                            
-                            let currentX = startCell.x;
-                            let currentY = startCell.y;
-                            let length = Math.floor(Math.random() * 2) + 1; // 1 or 2 additional cells
+                    // Guarantee at least one secret passage
+                    const { x: x1, y: y1 } = availableFloorCells.pop();
+                    this.grid[y1][x1] = 6; // Mark as secret
+                    this.features.push({ x: x1, y: y1, type: 'secret' });
 
-                            for(let l = 0; l < length; l++) {
-                                const dir = directions[0]; // Take the first random direction
-                                const nextX = currentX + dir.dx;
-                                const nextY = currentY + dir.dy;
-
-                                if (nextX > 0 && nextX < this.width - 1 && nextY > 0 && nextY < this.height - 1 &&
-                                    this.grid[nextY][nextX] === 1) { // Only extend into existing floor
-                                    this.grid[nextY][nextX] = 6;
-                                    currentX = nextX;
-                                    currentY = nextY;
-                                } else {
-                                    break; // Cannot extend further in this direction
-                                }
-                            }
-                        }
+                    const numSecrets = Math.floor(availableFloorCells.length * CONFIG.dungeon.featureChance / 2);
+                    for (let i = 0; i < numSecrets && availableFloorCells.length > 0; i++) {
+                        const { x, y } = availableFloorCells.pop();
+                        this.grid[y][x] = 6; // Mark as secret
+                        this.features.push({ x, y, type: 'secret' });
                     }
                 }
             }
@@ -2769,7 +2751,7 @@ const MONSTERS = {
                             label = 'T';
                         } else if (this.grid[y][x] === 6) { // Secret
                             fillColor = CONFIG.colors.secret;
-                            // Removed label = 'S'; as per user request
+                            label = 'S';
                         }
                          else if (roomGrid[y][x]) {
                             fillColor = CONFIG.colors.room;
@@ -2859,7 +2841,7 @@ const MONSTERS = {
                             label = 'T';
                         } else if (this.grid[y][x] === 6) { // Secret
                             fillColor = CONFIG.colors.secret;
-                            // Removed label = 'S'; as per user request
+                            label = 'S';
                         } else if (roomGrid[y][x]) {
                             fillColor = CONFIG.colors.room;
                         } else if (this.grid[y][x] === 1) { // Regular floor/corridor
