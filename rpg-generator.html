@@ -486,6 +486,49 @@
             outline: none;
             border-color: var(--accent);
         }
+
+        .item-list, .npc-list, .monster-list {
+            list-style: none;
+            padding: 0;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg-primary);
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+
+        .item-list-item, .npc-list-item, .monster-list-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-primary);
+        }
+
+        .item-list-item:last-child, .npc-list-item:last-child, .monster-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-list-item span, .npc-list-item span, .monster-list-item span {
+            flex-grow: 1;
+            cursor: pointer;
+        }
+
+        .remove-btn {
+            background-color: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1rem;
+            margin-left: 10px;
+        }
+
+        .remove-btn:hover {
+            color: var(--accent);
+        }
     </style>
 </head>
 <body>
@@ -639,8 +682,81 @@
                     <div class="controls-panel">
                         <h3>Dungeon Settings</h3>
                         <div class="control-group">
-                            <label>Coming soon...</label>
+                            <label for="dungeon-width">Width (cells)</label>
+                            <input type="number" id="dungeon-width" value="50" min="10" max="100">
                         </div>
+                        <div class="control-group">
+                            <label for="dungeon-height">Height (cells)</label>
+                            <input type="number" id="dungeon-height" value="50" min="10" max="100">
+                        </div>
+                        <div class="control-group">
+                            <label for="dungeon-entrances">Number of Entrances</label>
+                            <input type="number" id="dungeon-entrances" value="1" min="1" max="5">
+                        </div>
+                        <div class="control-group">
+                            <label for="dungeon-exits">Number of Exits</label>
+                            <input type="number" id="dungeon-exits" value="1" min="1" max="5">
+                        </div>
+                        <div class="control-group">
+                            <label for="dungeon-rooms">Number of Rooms</label>
+                            <input type="number" id="dungeon-rooms" value="10" min="5" max="50">
+                        </div>
+                        <div class="control-group">
+                            <label for="dungeon-room-vs-hall">Room vs. Hall Ratio</label>
+                            <input type="range" id="dungeon-room-vs-hall" min="0" max="100" value="50">
+                            <span id="dungeon-room-vs-hall-val">50% Rooms</span>
+                        </div>
+                    </div>
+
+                    <div class="controls-panel">
+                        <h3>Features</h3>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="include-pools">
+                                <label for="include-pools">Pools</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="include-traps">
+                                <label for="include-traps">Traps</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="include-secrets">
+                                <label for="include-secrets">Secret Passages</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="controls-panel">
+                        <h3>Custom Contents (Drag to move, Double-click to rename)</h3>
+                        <div class="control-group">
+                            <label for="dungeon-add-item">Add Item</label>
+                            <input type="text" id="dungeon-add-item" placeholder="e.g., Gold, Potion, Sword">
+                            <button class="btn btn-secondary" id="dungeon-add-item-btn">Add</button>
+                        </div>
+                        <ul id="dungeon-items-list"></ul>
+
+                        <div class="control-group">
+                            <label for="dungeon-add-npc">Add NPC</label>
+                            <input type="text" id="dungeon-add-npc" placeholder="e.g., Merchant, Guard">
+                            <button class="btn btn-secondary" id="dungeon-add-npc-btn">Add</button>
+                        </div>
+                        <ul id="dungeon-npcs-list"></ul>
+
+                        <div class="control-group">
+                            <label for="dungeon-add-monster">Add Monster</label>
+                            <input type="text" id="dungeon-add-monster" placeholder="e.g., Goblin, Orc">
+                            <button class="btn btn-secondary" id="dungeon-add-monster-btn">Add</button>
+                        </div>
+                        <ul id="dungeon-monsters-list"></ul>
+                    </div>
+
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="generate-dungeon">Generate Dungeon</button>
+                        <button class="btn btn-secondary" id="save-dungeon">Save as SVG</button>
+                    </div>
+
+                    <div class="canvas-container">
+                        <canvas id="dungeon-canvas"></canvas>
                     </div>
                 </div>
 
@@ -1466,7 +1582,12 @@ const MONSTERS = {
                 grid: '#2a2a4a',
                 monster: '#ef4444',
                 item: '#fbbf24',
-                npc: '#60a5fa'
+                npc: '#60a5fa',
+                room: '#4a4a4a', // New color for dungeon rooms
+                corridor: '#3a3a3a', // New color for dungeon corridors
+                pool: '#4facfe', // New color for pools
+                trap: '#ff7e5f', // New color for traps
+                secret: '#8e2de2' // New color for secret passages
             },
             maze: {
                 cellSize: 20,
@@ -1481,6 +1602,18 @@ const MONSTERS = {
                     complex: 0.25,
                     chaotic: 0.5
                 }
+            },
+            dungeon: {
+                cellSize: 8, // Smaller cells for larger dungeons
+                defaultWidth: 50,
+                defaultHeight: 50,
+                maxSize: 100,
+                minSize: 20,
+                maxRooms: 50,
+                minRooms: 5,
+                roomVsHallDefault: 50, // 50% rooms vs halls
+                featureChance: 0.1, // 10% chance for special features
+                minRegionSize: 15 // Minimum number of floor cells for a region to be kept
             }
         };
 
@@ -1938,6 +2071,877 @@ const MONSTERS = {
         }
 
         // ============================================
+        // DUNGEON GENERATOR
+        // ============================================
+        class DungeonGenerator {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.grid = []; // 0: wall, 1: floor
+                this.rooms = [];
+                this.corridors = [];
+                this.features = []; // Stores placed features (pools, traps, secrets)
+                this.customContents = {
+                    items: [],
+                    npcs: [],
+                    monsters: []
+                };
+
+                // Cellular Automata parameters
+                this.fillProbability = 0.45; // % chance a cell starts as a floor
+                this.deathLimit = 3;       // A floor cell with fewer than this many floor neighbors dies
+                this.birthLimit = 4;       // A wall cell with more than this many floor neighbors becomes a floor
+                this.numIterations = 4;    // Number of simulation steps
+
+                // Interaction variables
+                this.selectedContent = null;
+                this.isDragging = false;
+
+                // Event Listeners for interaction
+                this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
+                this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
+                this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
+                document.addEventListener('keydown', this.onKeyDown.bind(this));
+            }
+
+            generate(width, height, numEntrances, numExits, numRooms, roomVsHallRatio, features, customContents) {
+                this.width = width;
+                this.height = height;
+                this.cellSize = CONFIG.dungeon.cellSize;
+                this.canvas.width = width * this.cellSize;
+                this.canvas.height = height * this.cellSize;
+
+                this.rooms = [];
+                this.corridors = [];
+                this.features = features;
+                this.customContents = customContents;
+
+                // Step 1: Random Initialization
+                this.grid = Array(height).fill(null).map(() => Array(width).fill(0));
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        if (Math.random() < this.fillProbability) {
+                            this.grid[y][x] = 1; // Floor
+                        } else {
+                            this.grid[y][x] = 0; // Wall
+                        }
+                    }
+                }
+
+                // Step 2: Cellular Automata Simulation
+                for (let i = 0; i < this.numIterations; i++) {
+                    this.grid = this.doSimulationStep(this.grid);
+                }
+
+                // Step 3: Remove small regions and connect remaining ones
+                this.removeSmallRegions();
+                this.connectRegions();
+
+                // Step 4: Identify rooms
+                this.identifyRooms();
+
+                // Step 5: Place entrances and exits
+                this.placeEntrancesExits(numEntrances, numExits);
+
+                // Step 6: Place features
+                this.placeFeatures(features);
+
+                // Step 7: Place custom contents
+                this.placeCustomContent(customContents);
+                
+                this.draw();
+            }
+
+            // Performs one step of the cellular automata simulation
+            doSimulationStep(oldGrid) {
+                const newGrid = Array(this.height).fill(null).map(() => Array(this.width).fill(0));
+
+                for (let y = 0; y < this.height; y++) {
+                    for (let x = 0; x < this.width; x++) {
+                        const aliveNeighbors = this.countAliveNeighbors(oldGrid, x, y);
+
+                        if (oldGrid[y][x] === 1) { // If current cell is a floor
+                            if (aliveNeighbors < this.deathLimit) {
+                                newGrid[y][x] = 0; // Becomes a wall
+                            } else {
+                                newGrid[y][x] = 1; // Remains a floor
+                            }
+                        } else { // If current cell is a wall
+                            if (aliveNeighbors > this.birthLimit) {
+                                newGrid[y][x] = 1; // Becomes a floor
+                            } else {
+                                newGrid[y][x] = 0; // Remains a wall
+                            }
+                        }
+                    }
+                }
+                return newGrid;
+            }
+
+            // Counts the number of floor cells in the 8-directional neighborhood
+            countAliveNeighbors(grid, x, y) {
+                let count = 0;
+                for (let i = -1; i <= 1; i++) {
+                    for (let j = -1; j <= 1; j++) {
+                        if (i === 0 && j === 0) continue; // Skip self
+
+                        const nx = x + j;
+                        const ny = y + i;
+
+                        if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height) {
+                            if (grid[ny][nx] === 1) {
+                                count++;
+                            }
+                        } else {
+                            // Cells outside the grid are considered walls for boundary smoothing
+                            count++; 
+                        }
+                    }
+                }
+                return count;
+            }
+
+            // Finds all connected floor regions and returns them
+            getConnectedRegions() {
+                const regions = [];
+                const visited = Array(this.height).fill(null).map(() => Array(this.width).fill(false));
+
+                for (let y = 0; y < this.height; y++) {
+                    for (let x = 0; x < this.width; x++) {
+                        if (this.grid[y][x] === 1 && !visited[y][x]) {
+                            const newRegion = [];
+                            this.floodFill(x, y, newRegion, visited);
+                            regions.push(newRegion);
+                        }
+                    }
+                }
+                return regions;
+            }
+
+            // Helper for flood-fill algorithm
+            floodFill(startX, startY, region, visited) {
+                const stack = [{ x: startX, y: startY }];
+                visited[startY][startX] = true;
+
+                while (stack.length > 0) {
+                    const { x, y } = stack.pop();
+                    region.push({ x, y });
+
+                    const neighbors = [
+                        { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
+                        { dx: -1, dy: 0 }, { dx: 1, dy: 0 }
+                    ];
+
+                    for (const { dx, dy } of neighbors) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+
+                        if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height &&
+                            this.grid[ny][nx] === 1 && !visited[ny][nx]) {
+                            visited[ny][nx] = true;
+                            stack.push({ x: nx, y: ny });
+                        }
+                    }
+                }
+            }
+
+            // Removes regions smaller than minRegionSize
+            removeSmallRegions() {
+                const regions = this.getConnectedRegions();
+                const minSize = CONFIG.dungeon.minRegionSize;
+
+                let mainRegion = null;
+                let maxArea = 0;
+
+                regions.forEach(region => {
+                    if (region.length > maxArea) {
+                        maxArea = region.length;
+                        mainRegion = region;
+                    }
+                });
+
+                this.grid = Array(this.height).fill(null).map(() => Array(this.width).fill(0)); // Reset grid to all walls
+
+                if (mainRegion) {
+                    mainRegion.forEach(({ x, y }) => {
+                        this.grid[y][x] = 1; // Keep main region
+                    });
+                }
+
+                // Also keep regions that are large enough but not necessarily the main one
+                regions.forEach(region => {
+                    if (region.length >= minSize && region !== mainRegion) {
+                        region.forEach(({ x, y }) => {
+                            this.grid[y][x] = 1;
+                        });
+                    }
+                });
+
+                 // Ensure a border of walls
+                 for (let y = 0; y < this.height; y++) {
+                    this.grid[y][0] = 0;
+                    this.grid[y][this.width - 1] = 0;
+                }
+                for (let x = 0; x < this.width; x++) {
+                    this.grid[0][x] = 0;
+                    this.grid[this.height - 1][x] = 0;
+                }
+            }
+
+            // Connects isolated regions
+            connectRegions() {
+                let regions = this.getConnectedRegions();
+                if (regions.length <= 1) return; // Already connected or too few regions
+
+                // Sort regions by size to connect smaller ones to larger ones
+                regions.sort((a, b) => a.length - b.length);
+
+                for (let i = 0; i < regions.length - 1; i++) {
+                    const regionA = regions[i];
+                    const regionB = regions[i + 1]; // Connect to the next larger region
+
+                    let bestPath = null;
+                    let minDistance = Infinity;
+
+                    // Find the closest points between two regions
+                    for (const p1 of regionA) {
+                        for (const p2 of regionB) {
+                            const dist = Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y); // Manhattan distance
+
+                            if (dist < minDistance) {
+                                minDistance = dist;
+                                bestPath = { p1, p2 };
+                            }
+                        }
+                    }
+
+                    if (bestPath) {
+                        // "Dig" a corridor between the two closest points
+                        this.carveCorridor(bestPath.p1, bestPath.p2);
+                    }
+                }
+            }
+
+            // Carves a simple corridor between two points
+            carveCorridor(p1, p2) {
+                let currX = p1.x;
+                let currY = p1.y;
+
+                while (currX !== p2.x || currY !== p2.y) {
+                    this.grid[currY][currX] = 1; // Make it a floor
+
+                    if (currX < p2.x) currX++;
+                    else if (currX > p2.x) currX--;
+                    else if (currY < p2.y) currY++;
+                    else if (currY > p2.y) currY--;
+                }
+                this.grid[p2.y][p2.x] = 1; // Ensure the target point is also a floor
+            }
+
+            // Identifies rectangular rooms from the processed grid
+            identifyRooms() {
+                this.rooms = [];
+                const visited = Array(this.height).fill(null).map(() => Array(this.width).fill(false));
+
+                for (let y = 1; y < this.height - 1; y++) {
+                    for (let x = 1; x < this.width - 1; x++) {
+                        if (this.grid[y][x] === 1 && !visited[y][x]) {
+                            // Attempt to find a rectangular room
+                            let roomWidth = 0;
+                            let roomHeight = 0;
+
+                            // Find width
+                            for (let w = x; w < this.width - 1; w++) {
+                                if (this.grid[y][w] === 1 && !visited[y][w]) {
+                                    roomWidth++;
+                                } else {
+                                    break;
+                                }
+                            }
+
+                            // Find height
+                            for (let h = y; h < this.height - 1; h++) {
+                                let rowIsFloor = true;
+                                for (let w = 0; w < roomWidth; w++) {
+                                    if (this.grid[h][x + w] === 0 || visited[h][x + w]) {
+                                        rowIsFloor = false;
+                                        break;
+                                    }
+                                }
+                                if (rowIsFloor) {
+                                    roomHeight++;
+                                } else {
+                                    break;
+                                }
+                            }
+
+                            if (roomWidth > 2 && roomHeight > 2) { // Minimum room size
+                                this.rooms.push({ x: x, y: y, width: roomWidth, height: roomHeight });
+                                // Mark cells as visited
+                                for (let ry = y; ry < y + roomHeight; ry++) {
+                                    for (let rx = x; rx < x + roomWidth; rx++) {
+                                        visited[ry][rx] = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Places entrances and exits
+            placeEntrancesExits(numEntrances, numExits) {
+                const availableFloorCells = [];
+                for (let y = 1; y < this.height - 1; y++) {
+                    for (let x = 1; x < this.width - 1; x++) {
+                        if (this.grid[y][x] === 1) {
+                            availableFloorCells.push({ x, y });
+                        }
+                    }
+                }
+
+                this.shuffleArray(availableFloorCells);
+
+                // Place entrances
+                for (let i = 0; i < numEntrances && availableFloorCells.length > 0; i++) {
+                    const { x, y } = availableFloorCells.pop();
+                    this.grid[y][x] = 2; // Mark as entrance
+                }
+
+                // Place exits
+                for (let i = 0; i < numExits && availableFloorCells.length > 0; i++) {
+                    const { x, y } = availableFloorCells.pop();
+                    this.grid[y][x] = 3; // Mark as exit
+                }
+            }
+
+            // Helper to shuffle an array (Fisher-Yates)
+            shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+            }
+
+            // Places features (pools, traps, secrets)
+            placeFeatures(features) {
+                const availableFloorCells = [];
+                for (let y = 1; y < this.height - 1; y++) {
+                    for (let x = 1; x < this.width - 1; x++) {
+                        if (this.grid[y][x] === 1) { // Only place on floor tiles
+                            availableFloorCells.push({ x, y });
+                        }
+                    }
+                }
+                this.shuffleArray(availableFloorCells);
+
+                // Place pools
+                if (features.pools) {
+                    const numPools = Math.floor(availableFloorCells.length * CONFIG.dungeon.featureChance / 2); // Half of general feature chance
+                    for (let i = 0; i < numPools && availableFloorCells.length > 0; i++) {
+                        const { x, y } = availableFloorCells.pop();
+                        this.grid[y][x] = 4; // Mark as pool
+                    }
+                }
+
+                // Place traps
+                if (features.traps) {
+                    const numTraps = Math.floor(availableFloorCells.length * CONFIG.dungeon.featureChance);
+                    for (let i = 0; i < numTraps && availableFloorCells.length > 0; i++) {
+                        const { x, y } = availableFloorCells.pop();
+                        this.grid[y][x] = 5; // Mark as trap
+                    }
+                }
+
+                // Place secret passages (just marking a tile for now)
+                if (features.secrets) {
+                    const numSecrets = Math.floor(availableFloorCells.length * CONFIG.dungeon.featureChance / 2);
+                    for (let i = 0; i < numSecrets && availableFloorCells.length > 0; i++) {
+                        const { x, y } = availableFloorCells.pop();
+                        this.grid[y][x] = 6; // Mark as secret
+                    }
+                }
+            }
+
+            // Places custom content (items, npcs, monsters)
+            placeCustomContent(customContents) {
+                const availableFloorCells = [];
+                for (let y = 1; y < this.height - 1; y++) {
+                    for (let x = 1; x < this.width - 1; x++) {
+                        // Only place on floor tiles not already occupied by entrances, exits, or other features
+                        // Grid value 1 signifies a regular floor tile.
+                        // Entrances (2), Exits (3), Pools (4), Traps (5), Secrets (6) should not be overwritten.
+                        if (this.grid[y][x] === 1) { 
+                            availableFloorCells.push({ x, y });
+                        }
+                    }
+                }
+                this.shuffleArray(availableFloorCells);
+
+                ['items', 'npcs', 'monsters'].forEach(type => {
+                    customContents[type].forEach(content => {
+                        if (availableFloorCells.length > 0) {
+                            const { x, y } = availableFloorCells.pop();
+                            content.x = x;
+                            content.y = y;
+                        } else {
+                            console.warn(`Not enough space to place all custom ${type}!`);
+                        }
+                    });
+                });
+            }
+
+            // --- Interaction Methods ---
+
+            onMouseDown(event) {
+                const rect = this.canvas.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+
+                const gridX = Math.floor(mouseX / this.cellSize);
+                const gridY = Math.floor(mouseY / this.cellSize);
+
+                this.isDragging = false;
+                this.selectedContent = null;
+
+                // Check if any custom content was clicked
+                ['items', 'npcs', 'monsters'].forEach(type => {
+                    this.customContents[type].forEach(content => {
+                        if (content.x === gridX && content.y === gridY) {
+                            this.selectedContent = content;
+                            this.isDragging = true;
+                            // Update the custom content list to highlight selected item if needed
+                            renderCustomContentList(type); // Re-render to update UI
+                        }
+                    });
+                });
+            }
+
+            onMouseMove(event) {
+                if (!this.isDragging || !this.selectedContent) return;
+
+                const rect = this.canvas.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+
+                const gridX = Math.floor(mouseX / this.cellSize);
+                const gridY = Math.floor(mouseY / this.cellSize);
+
+                // Update position if it's a valid floor tile and not occupied by other special elements
+                if (gridX >= 0 && gridX < this.width && gridY >= 0 && gridY < this.height && 
+                    this.grid[gridY][gridX] === 1) { // Only allow dropping on regular floor tiles
+                    this.selectedContent.x = gridX;
+                    this.selectedContent.y = gridY;
+                    this.draw(); // Redraw immediately for visual feedback
+                }
+            }
+
+            onMouseUp(event) {
+                this.isDragging = false;
+                if (this.selectedContent) {
+                    // Update the custom content list UI with new position
+                    ['items', 'npcs', 'monsters'].forEach(type => {
+                        renderCustomContentList(type);
+                    });
+                    this.selectedContent = null;
+                }
+            }
+
+            onKeyDown(event) {
+                if (event.key === 'Escape' && this.selectedContent) {
+                    this.selectedContent = null;
+                    this.isDragging = false;
+                    ['items', 'npcs', 'monsters'].forEach(type => {
+                        renderCustomContentList(type);
+                    });
+                    this.draw(); // Redraw to remove any highlight/selection
+                }
+            }
+
+
+            draw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Create a temporary grid to mark room cells
+                const roomGrid = Array(this.height).fill(null).map(() => Array(this.width).fill(false));
+                this.rooms.forEach(room => {
+                    for (let y = room.y; y < room.y + room.height; y++) {
+                        for (let x = room.x; x < room.x + room.width; x++) {
+                            roomGrid[y][x] = true;
+                        }
+                    }
+                });
+
+                for (let y = 0; y < this.height; y++) {
+                    for (let x = 0; x < this.width; x++) {
+                        const cx = x * this.cellSize;
+                        const cy = y * this.cellSize;
+
+                        if (this.grid[y][x] === 0) {
+                            this.ctx.fillStyle = CONFIG.colors.wall;
+                        } else if (this.grid[y][x] === 2) { // Entrance
+                            this.ctx.fillStyle = CONFIG.colors.entrance;
+                        } else if (this.grid[y][x] === 3) { // Exit
+                            this.ctx.fillStyle = CONFIG.colors.exit;
+                        } else if (this.grid[y][x] === 4) { // Pool
+                            this.ctx.fillStyle = CONFIG.colors.pool;
+                        } else if (this.grid[y][x] === 5) { // Trap
+                            this.ctx.fillStyle = CONFIG.colors.trap;
+                        } else if (this.grid[y][x] === 6) { // Secret
+                            this.ctx.fillStyle = CONFIG.colors.secret;
+                        }
+                         else if (roomGrid[y][x]) {
+                            this.ctx.fillStyle = CONFIG.colors.room;
+                        } else {
+                            this.ctx.fillStyle = CONFIG.colors.corridor;
+                        }
+                        this.ctx.fillRect(cx, cy, this.cellSize, this.cellSize);
+                    }
+                }
+
+                // Draw custom contents
+                this.drawCustomContents(this.customContents.items, CONFIG.colors.item);
+                this.drawCustomContents(this.customContents.npcs, CONFIG.colors.npc);
+                this.drawCustomContents(this.customContents.monsters, CONFIG.colors.monster);
+            }
+
+            drawCustomContents(contents, color) {
+                contents.forEach(item => {
+                    if (item.x !== null && item.y !== null) {
+                        const cx = (item.x + 0.5) * this.cellSize;
+                        const cy = (item.y + 0.5) * this.cellSize;
+                        const size = this.cellSize / 2.5;
+
+                        this.ctx.fillStyle = color;
+                        this.ctx.beginPath();
+                        this.ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
+                        this.ctx.fill();
+
+                        // Draw text label
+                        this.ctx.fillStyle = CONFIG.colors.text_primary;
+                        this.ctx.font = `${this.cellSize / 2}px Arial`;
+                        this.ctx.textAlign = 'center';
+                        this.ctx.textBaseline = 'middle';
+                        this.ctx.fillText(item.name, cx, cy - this.cellSize / 2);
+                    }
+                });
+            }
+
+
+                        exportSVG() {
+
+
+                            const w = this.width * this.cellSize;
+
+
+                            const h = this.height * this.cellSize;
+
+
+                            const cs = this.cellSize;
+
+
+            
+
+
+                            let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+
+
+                            svg += `<rect width="${w}" height="${h}" fill="${CONFIG.colors.background}"/>`; // Use background for full canvas
+
+
+            
+
+
+                            // Create a temporary grid to mark room cells
+
+
+                            const roomGrid = Array(this.height).fill(null).map(() => Array(this.width).fill(false));
+
+
+                            this.rooms.forEach(room => {
+
+
+                                for (let y = room.y; y < room.y + room.height; y++) {
+
+
+                                    for (let x = room.x; x < room.x + room.width; x++) {
+
+
+                                        roomGrid[y][x] = true;
+
+
+                                    }
+
+
+                                }
+
+
+                            });
+
+
+            
+
+
+                            for (let y = 0; y < this.height; y++) {
+
+
+                                for (let x = 0; x < this.width; x++) {
+
+
+                                    const cx = x * cs;
+
+
+                                    const cy = y * cs;
+
+
+            
+
+
+                                    let fillColor = CONFIG.colors.background; // Default to background if outside grid or unknown
+
+
+            
+
+
+                                    if (this.grid[y][x] === 0) {
+
+
+                                        fillColor = CONFIG.colors.wall;
+
+
+                                    } else if (this.grid[y][x] === 2) { // Entrance
+
+
+                                        fillColor = CONFIG.colors.entrance;
+
+
+                                    } else if (this.grid[y][x] === 3) { // Exit
+
+
+                                        fillColor = CONFIG.colors.exit;
+
+
+                                    } else if (this.grid[y][x] === 4) { // Pool
+
+
+                                        fillColor = CONFIG.colors.pool;
+
+
+                                    } else if (this.grid[y][x] === 5) { // Trap
+
+
+                                        fillColor = CONFIG.colors.trap;
+
+
+                                    } else if (this.grid[y][x] === 6) { // Secret
+
+
+                                        fillColor = CONFIG.colors.secret;
+
+
+                                    } else if (roomGrid[y][x]) {
+
+
+                                        fillColor = CONFIG.colors.room;
+
+
+                                    } else if (this.grid[y][x] === 1) { // Regular floor/corridor
+
+
+                                        fillColor = CONFIG.colors.corridor;
+
+
+                                    }
+
+
+                                    svg += `<rect x="${cx}" y="${cy}" width="${cs}" height="${cs}" fill="${fillColor}"/>`;
+
+
+                                }
+
+
+                            }
+
+
+            
+
+
+                                            // Export custom contents
+
+
+            
+
+
+                                            this.customContents.items.forEach(item => {
+
+
+            
+
+
+                                                if (item.x !== null && item.y !== null) {
+
+
+            
+
+
+                                                    const cx = (item.x + 0.5) * cs;
+
+
+            
+
+
+                                                    const cy = (item.y + 0.5) * cs;
+
+
+            
+
+
+                                                    const size = cs / 2.5;
+
+
+            
+
+
+                                                    svg += `<circle cx="${cx}" cy="${cy}" r="${size / 2}" fill="${CONFIG.colors.item}"/>`;
+
+
+            
+
+
+                                                    svg += `<text x="${cx}" y="${cy - cs / 2}" font-family="Arial" font-size="${cs / 2}" fill="${CONFIG.colors.text_primary}" text-anchor="middle" dominant-baseline="middle">${item.name}</text>`;
+
+
+            
+
+
+                                                }
+
+
+            
+
+
+                                            });
+
+
+            
+
+
+                                            this.customContents.npcs.forEach(item => {
+
+
+            
+
+
+                                                if (item.x !== null && item.y !== null) {
+
+
+            
+
+
+                                                    const cx = (item.x + 0.5) * cs;
+
+
+            
+
+
+                                                    const cy = (item.y + 0.5) * cs;
+
+
+            
+
+
+                                                    const size = cs / 2.5;
+
+
+            
+
+
+                                                    svg += `<circle cx="${cx}" cy="${cy}" r="${size / 2}" fill="${CONFIG.colors.npc}"/>`;
+
+
+            
+
+
+                                                    svg += `<text x="${cx}" y="${cy - cs / 2}" font-family="Arial" font-size="${cs / 2}" fill="${CONFIG.colors.text_primary}" text-anchor="middle" dominant-baseline="middle">${item.name}</text>`;
+
+
+            
+
+
+                                                }
+
+
+            
+
+
+                                            });
+
+
+            
+
+
+                                            this.customContents.monsters.forEach(item => {
+
+
+            
+
+
+                                                if (item.x !== null && item.y !== null) {
+
+
+            
+
+
+                                                    const cx = (item.x + 0.5) * cs;
+
+
+            
+
+
+                                                    const cy = (item.y + 0.5) * cs;
+
+
+            
+
+
+                                                    const size = cs / 2.5;
+
+
+            
+
+
+                                                    svg += `<circle cx="${cx}" cy="${cy}" r="${size / 2}" fill="${CONFIG.colors.monster}"/>`;
+
+
+            
+
+
+                                                    svg += `<text x="${cx}" y="${cy - cs / 2}" font-family="Arial" font-size="${cs / 2}" fill="${CONFIG.colors.text_primary}" text-anchor="middle" dominant-baseline="middle">${item.name}</text>`;
+
+
+            
+
+
+                                                }
+
+
+            
+
+
+                                            });
+
+
+            
+
+
+                            svg += '</svg>';
+
+
+                            return svg;
+
+
+                        }        }
+        // ============================================
         // MONSTER GENERATOR
         // ============================================
 
@@ -2002,14 +3006,77 @@ const MONSTERS = {
             populateMonsterList(MONSTERS);
         }
 
+        // Helper functions for managing custom content lists
+        let dungeonCustomContents = {
+            items: [],
+            npcs: [],
+            monsters: []
+        };
+
+        function addCustomContent(type) {
+            const inputId = `dungeon-add-${type.slice(0, -1)}`; // e.g., 'dungeon-add-item'
+            const inputElement = document.getElementById(inputId);
+            const name = inputElement.value.trim();
+
+            if (name) {
+                dungeonCustomContents[type].push({ name: name, x: null, y: null });
+                inputElement.value = '';
+                renderCustomContentList(type);
+            }
+        }
+
+        function removeCustomContent(type, index) {
+            dungeonCustomContents[type].splice(index, 1);
+            renderCustomContentList(type);
+        }
+
+        function renameCustomContent(type, index, newName) {
+            if (newName) {
+                dungeonCustomContents[type][index].name = newName;
+                renderCustomContentList(type);
+            }
+        }
+
+        function renderCustomContentList(type) {
+            const listElement = document.getElementById(`dungeon-${type}-list`);
+            listElement.innerHTML = '';
+
+            dungeonCustomContents[type].forEach((item, index) => {
+                const li = document.createElement('li');
+                li.className = `${type.slice(0, -1)}-list-item`; // e.g., 'item-list-item'
+                
+                const span = document.createElement('span');
+                span.textContent = item.name;
+                span.title = `Position: ${item.x !== null ? `${item.x}, ${item.y}` : 'Unplaced'}`;
+                span.addEventListener('dblclick', () => {
+                    const newName = prompt(`Rename ${item.name}:`, item.name);
+                    renameCustomContent(type, index, newName);
+                });
+
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-btn';
+                removeBtn.textContent = 'x';
+                removeBtn.addEventListener('click', () => {
+                    removeCustomContent(type, index);
+                });
+
+                li.appendChild(span);
+                li.appendChild(removeBtn);
+                listElement.appendChild(li);
+            });
+        }
+
+
         // ============================================
         // INITIALIZATION
         // ============================================
         let mazeGenerator;
+        let dungeonGenerator; // Declare dungeonGenerator here
 
         function init() {
             initTabs();
             mazeGenerator = new MazeGenerator('maze-canvas');
+            dungeonGenerator = new DungeonGenerator('dungeon-canvas'); // Initialize dungeonGenerator
 
             document.getElementById('monster-chance').addEventListener('input', (e) => {
                 document.getElementById('monster-chance-val').textContent = e.target.value + '%';
@@ -2019,6 +3086,49 @@ const MONSTERS = {
             });
             document.getElementById('npc-chance').addEventListener('input', (e) => {
                 document.getElementById('npc-chance-val').textContent = e.target.value + '%';
+            });
+
+            // Dungeon related event listeners
+            document.getElementById('dungeon-room-vs-hall').addEventListener('input', (e) => {
+                document.getElementById('dungeon-room-vs-hall-val').textContent = e.target.value + '% Rooms';
+            });
+
+            document.getElementById('dungeon-add-item-btn').addEventListener('click', () => addCustomContent('items'));
+            document.getElementById('dungeon-add-npc-btn').addEventListener('click', () => addCustomContent('npcs'));
+            document.getElementById('dungeon-add-monster-btn').addEventListener('click', () => addCustomContent('monsters'));
+
+            renderCustomContentList('items');
+            renderCustomContentList('npcs');
+            renderCustomContentList('monsters');
+
+            document.getElementById('generate-dungeon').addEventListener('click', () => {
+                const width = parseInt(document.getElementById('dungeon-width').value);
+                const height = parseInt(document.getElementById('dungeon-height').value);
+                const numEntrances = parseInt(document.getElementById('dungeon-entrances').value);
+                const numExits = parseInt(document.getElementById('dungeon-exits').value);
+                const numRooms = parseInt(document.getElementById('dungeon-rooms').value);
+                const roomVsHallRatio = parseInt(document.getElementById('dungeon-room-vs-hall').value);
+                const features = {
+                    pools: document.getElementById('include-pools').checked,
+                    traps: document.getElementById('include-traps').checked,
+                    secrets: document.getElementById('include-secrets').checked
+                };
+
+                const w = Math.max(CONFIG.dungeon.minSize, Math.min(CONFIG.dungeon.maxSize, width));
+                const h = Math.max(CONFIG.dungeon.minSize, Math.min(CONFIG.dungeon.maxSize, height));
+
+                dungeonGenerator.generate(w, h, numEntrances, numExits, numRooms, roomVsHallRatio, features, dungeonCustomContents);
+            });
+
+            document.getElementById('save-dungeon').addEventListener('click', () => {
+                const svg = dungeonGenerator.exportSVG();
+                const blob = new Blob([svg], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'dungeon.svg';
+                a.click();
+                URL.revokeObjectURL(url);
             });
 
             const generateBtn = document.getElementById('generate-maze');
