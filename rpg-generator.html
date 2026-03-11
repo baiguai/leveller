@@ -303,9 +303,12 @@
         }
 
         #dm-content {
-            height: calc(100vh - 100px); /* Adjust based on header/footer heights */
+            /* Removed fixed height: height: calc(100vh - 100px); */
             background-color: var(--bg-primary); /* Use primary background */
             color: var(--text-primary); /* Use primary text color */
+            flex-grow: 1; /* Allow it to take up available space */
+            display: flex; /* Make #dm-content a flex container */
+            flex-direction: column; /* Stack children vertically */
         }
         #dm-content a {
             color: var(--text-secondary); /* Use secondary text for links */
@@ -316,6 +319,18 @@
             box-sizing: border-box;
             overflow-y: auto;
         }
+
+        #dm-panels-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px; /* Spacing between panels */
+            padding: 15px; /* Padding inside the DM content area */
+            align-items: flex-start; /* Align panels to the top */
+            flex-grow: 1; /* Allow panels container to grow */
+            overflow-y: auto; /* Enable scrolling for panels if content overflows */
+            align-content: flex-start; /* Distribute rows to the start of the container */
+        }
+
         #dm-content #dicePanel, #dm-content #calcPanel {
             width: 200px;
             flex-shrink: 0;
@@ -971,34 +986,36 @@
                 </div>
 
                 <div class="tab-content" id="dm-content">
-                    <div id="dicePanel" class="panel">
-                        <h3>Dice Roller</h3>
-                        <input type="text" id="diceInput" placeholder="e.g., 2d6, 1d20+5">
-                        <div id="diceResults"></div>
-                    </div>
+                    <div id="dm-panels-container">
+                        <div id="dicePanel" class="panel">
+                            <h3>Dice Roller</h3>
+                            <input type="text" id="diceInput" placeholder="e.g., 2d6, 1d20+5">
+                            <div id="diceResults"></div>
+                        </div>
 
-                    <div id="notesPanel" class="panel">
-                        <h3>Notes</h3>
-                        <textarea id="notesArea" placeholder="Your notes here..."></textarea>
-                    </div>
+                        <div id="notesPanel" class="panel">
+                            <h3>Notes</h3>
+                            <textarea id="notesArea" placeholder="Your notes here..."></textarea>
+                        </div>
 
-                    <div id="initiativePanel" class="panel">
-                        <h3>Initiative Tracker</h3>
-                        <div id="initiativeList"></div>
-                    </div>
+                        <div id="initiativePanel" class="panel">
+                            <h3>Initiative Tracker</h3>
+                            <div id="initiativeList"></div>
+                        </div>
 
-                    <div id="calcPanel" class="panel">
-                        <h3>Calculators</h3>
-                        <div id="calcList"></div>
-                    </div>
+                        <div id="calcPanel" class="panel">
+                            <h3>Calculators</h3>
+                            <div id="calcList"></div>
+                        </div>
 
-                    <div id="linksPanel" class="panel">
-                        <h3>Quick Links</h3>
-                        <ul>
-                            <li><a href="https://www.dndbeyond.com/" target="_blank">D&D Beyond</a></li>
-                            <li><a href="https://roll20.net/" target="_blank">Roll20</a></li>
-                            <li><a href="https://www.fantasygrounds.com/home/home.xcp" target="_blank">Fantasy Grounds</a></li>
-                        </ul>
+                        <div id="linksPanel" class="panel">
+                            <h3>Quick Links</h3>
+                            <ul>
+                                <li><a href="https://www.dndbeyond.com/" target="_blank">D&D Beyond</a></li>
+                                <li><a href="https://roll20.net/" target="_blank">Roll20</a></li>
+                                <li><a href="https://www.fantasygrounds.com/home/home.xcp" target="_blank">Fantasy Grounds</a></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2880,7 +2897,7 @@ const MONSTERS = {
                 // Notes
                 if (panel === "notesPanel") {
                     let textarea = document.getElementById("notesArea");
-                    if (e.key === "Enter" && document.activeElement !== textarea) {
+                    if ((e.key === "Enter" || e.key === "i") && document.activeElement !== textarea) {
                         textarea.focus();
                         this.editing = true;
                         e.preventDefault();
