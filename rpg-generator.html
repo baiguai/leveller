@@ -302,6 +302,83 @@
             height: 12px;
         }
 
+        #dm-content {
+            display: flex;
+            height: calc(100vh - 100px); /* Adjust based on header/footer heights */
+            background-color: var(--bg-primary); /* Use primary background */
+            color: var(--text-primary); /* Use primary text color */
+        }
+        #dm-content a {
+            color: var(--text-secondary); /* Use secondary text for links */
+        }
+        #dm-content .panel {
+            border: 1px solid var(--border);
+            padding: 12px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        #dm-content #dicePanel, #dm-content #calcPanel {
+            width: 200px;
+            flex-shrink: 0;
+        }
+        #dm-content #centerPanel {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        #dm-content #initiativePanel {
+            flex: 1;
+            border: 1px solid var(--border);
+            overflow-y: auto;
+        }
+        #dm-content #notesPanel {
+            flex: 1;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+        #dm-content #notesPanel textarea {
+            flex: 1;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            outline: none;
+            resize: none;
+            padding: 8px; /* Added padding for consistency */
+        }
+        #dm-content #linksPanel {
+            border: 1px solid var(--border);
+            height: 150px; /* Fixed height for links panel */
+            overflow-y: auto;
+            margin-top: 10px; /* Spacing */
+        }
+        #dm-content .active {
+            border: 2px solid var(--accent) !important;
+            box-shadow: 0 0 6px var(--accent); /* Use accent color for glow */
+        }
+        #dm-content .calc, #dm-content .initiative {
+            display: flex;
+            margin: 2px 0;
+        }
+        #dm-content .calc input, #dm-content .initiative input {
+            flex: 1;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            outline: none;
+            padding: 4px; /* Added padding */
+        }
+        #dm-content .initiative span {
+            flex: 1;
+            padding: 2px;
+        }
+        #dm-content .selected {
+            background: var(--bg-tertiary); /* Use tertiary background for selected */
+        }
+        #dm-content #diceResults {
+            margin-top: 8px;
+        }
+
         .monster-panel {
             display: flex;
             gap: 20px;
@@ -1653,6 +1730,16 @@ const MONSTERS = {
 
                     titleEl.textContent = tabNames[tabId];
 
+                    // Enable/disable DM Tools keybindings based on active tab
+                    if (dmTools) { // Check if dmTools is initialized
+                        if (tabId === 'dm') {
+                            dmTools.enableKeybindings();
+                        } else {
+                            dmTools.disableKeybindings();
+                        }
+                    }
+
+
                     if (tabId === 'monster') {
                         loadMonsters();
                     }
@@ -2692,6 +2779,319 @@ const MONSTERS = {
                 svg += '</svg>';
                 return svg;
             }        }
+
+        // ============================================
+        // DM TOOLS
+        // ============================================
+        class DmTools {
+            constructor() {
+                this.panels = ["dicePanel", "notesPanel", "initiativePanel", "calcPanel"];
+                this.editing = false;
+                this.editingInit = false;
+                this.currentPanelIndex = 0;
+                this.lastPanelIndex = 0;
+                this.keydownListener = this.onKeyDown.bind(this);
+            }
+
+            init() {
+                // Attach event listeners for buttons that are part of the DM Tools
+                // These event listeners should be attached to the buttons within the DM tab
+                // when the DM tab is activated. For now, we will add a placeholder and refine later.
+                // document.getElementById("dungeon-add-item-btn").addEventListener("click", () => this.addCalc()); // Example placeholder
+            }
+
+            updateActivePanel() {
+                this.panels.forEach((id, i) => {
+                    const panelElement = document.getElementById(id);
+                    if (panelElement) {
+                        panelElement.classList.toggle("active", i === this.currentPanelIndex);
+                    }
+                });
+            }
+
+            onKeyDown(e) {
+                // Check if the DM tab is currently active
+                const dmTabContent = document.getElementById('dm-content');
+                if (!dmTabContent || !dmTabContent.classList.contains('active')) {
+                    return; // Only process key events if DM tab is active
+                }
+
+                let panel = this.panels[this.currentPanelIndex];
+
+                // Calculator
+                if (panel === "calcPanel") {
+                    if (e.key === "a") {
+                        e.preventDefault();
+                        this.addCalc();
+                    } else if (e.key === "d") {
+                        this.deleteSelected("calc");
+                    } else if (e.key === "j") {
+                        e.preventDefault();
+                        this.selectNext("calc");
+                    } else if (e.key === "k") {
+                        e.preventDefault();
+                        this.selectPrev("calc");
+                    } else if (e.key === "Enter") {
+                        e.preventDefault();
+                        let selected = document.querySelector("#calcList .selected input");
+                        if (selected) {
+                            try {
+                                selected.value = eval(selected.value);
+                            } catch (error) {
+                                selected.value = "Error";
+                            }
+                        }
+                    }
+                }
+
+                // Notes
+                if (panel === "notesPanel") {
+                    let textarea = document.getElementById("notesArea");
+                    if (e.key === "Enter" && document.activeElement !== textarea) {
+                        textarea.focus();
+                        this.editing = true;
+                        e.preventDefault();
+                    } else if (e.key === "Escape") {
+                        this.editing = false;
+                        textarea.blur();
+                    }
+                }
+
+                if (this.editing) {
+                    return;
+                }
+
+                // Initiative
+                if (panel === "initiativePanel") {
+                    this.updateActivePanel();
+                    let selected = document.querySelector("#initiativeList .selected");
+                    if (e.key === "a" && (!selected || selected.dataset.mode === "view")) {
+                        e.preventDefault();
+                        this.addInitiative();
+                    } else if (selected && selected.dataset.mode === "view") {
+                        if (e.key === "d") {
+                            selected.remove();
+                        } else if (e.key === "j") {
+                            this.selectNext("initiative");
+                        } else if (e.key === "k") {
+                            this.selectPrev("initiative");
+                        } else if (e.key === "J") {
+                            this.moveDown("initiative");
+                        } else if (e.key === "K") {
+                            this.moveUp("initiative");
+                        } else if (e.key === "Enter") {
+                            this.editingInit = true;
+                            this.makeEditable(selected);
+                        }
+                    } else if (selected && selected.dataset.mode === "edit" && e.key === "Enter") {
+                        this.editingInit = false;
+                        this.makeReadOnly(selected);
+                    }
+
+                    if (!selected) {
+                        this.selectNext("initiative");
+                    }
+                }
+
+                if (this.editingInit) {
+                    return;
+                }
+
+                // Dice roller
+                if (panel === "dicePanel") {
+                    if (e.key === "Enter" && document.activeElement === document.getElementById("diceInput")) {
+                        let input = document.getElementById("diceInput");
+                        this.rollDice(input.value);
+                        input.value = "";
+                        e.preventDefault();                   
+                    } else {
+                        // Focus on diceInput only if another element isn't active
+                        if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                            document.getElementById("diceInput").focus();
+                        }
+                    }
+
+                    if (!/^[0-9hlxd]$/.test(e.key)) {
+                        if (
+                            e.key !== "Backspace" &&
+                            e.key !== "Delete"  &&
+                            e.key !== "Tab" &&
+                            e.key !== "Escape" &&
+                            e.key !== "Enter" &&
+                            !e.key.startsWith("Arrow")
+                        ) {
+                            // Only prevent default if we're not allowing these common keys
+                            // e.preventDefault();
+                            // return;
+                        }
+                    }
+                }
+
+                // Navigation
+                if (e.key === "h") {
+                    this.lastPanelIndex = this.currentPanelIndex;
+                    this.currentPanelIndex = (this.currentPanelIndex - 1 + this.panels.length) % this.panels.length;
+                    this.updateActivePanel();
+                    e.preventDefault();
+
+                    if (document.activeElement) {
+                        document.activeElement.blur();
+                    }
+                    return;
+                }
+                if (e.key === "l") {
+                    this.lastPanelIndex = this.currentPanelIndex;
+                    this.currentPanelIndex = (this.currentPanelIndex + 1) % this.panels.length;
+                    this.updateActivePanel();
+                    e.preventDefault();
+
+                    if (document.activeElement) {
+                        document.activeElement.blur();
+                    }
+                    return;
+                }
+            }
+
+            rollDice(expression) {
+                let resultsDiv = document.getElementById("diceResults");
+                let match = expression.match(/^(\d+x)?(\d+)d(\d+)$/);
+                if (!match) {
+                    resultsDiv.innerHTML = "Invalid roll";
+                    return;
+                }
+                let times = match[1] ? parseInt(match[1]) : 1;
+                let rolls = parseInt(match[2]);
+                let sides = parseInt(match[3]);
+                let allResults = [];
+                for (let t = 0; t < times; t++) {
+                    let total = 0;
+                    let parts = [];
+                    for (let i = 0; i < rolls; i++) {
+                        let roll = Math.floor(Math.random() * sides) + 1;
+                        parts.push(roll);
+                        total += roll;
+                    }
+                    allResults.push(`${parts.join("+")} = ${total}`);
+                }
+                resultsDiv.innerHTML = allResults.join("<br>");
+            }
+
+            addCalc() {
+                let list = document.getElementById("calcList");
+                let div = document.createElement("div");
+                div.className = "calc";
+                let input = document.createElement("input");
+                div.appendChild(input);
+                list.appendChild(div);
+                this.selectElement(div, "calc");
+                input.focus();
+            }
+
+            deleteSelected(type) {
+                let selected = document.querySelector(`#${type}List .selected`);
+                if (selected) selected.remove();
+            }
+
+            addInitiative() {
+                let list = document.getElementById("initiativeList");
+                let div = document.createElement("div");
+                div.className = "initiative";
+                div.dataset.mode = "edit";
+                let input = document.createElement("input");
+                div.appendChild(input);
+                list.appendChild(div);
+                this.selectElement(div, "initiative");
+                this.editingInit = true;
+                input.focus();
+            }
+
+            makeEditable(div) {
+                let text = div.querySelector("span").innerText;
+                div.innerHTML = "";
+                let input = document.createElement("input");
+                input.value = text;
+                div.appendChild(input);
+                div.dataset.mode = "edit";
+                input.focus();
+            }
+
+            makeReadOnly(div) {
+                let input = div.querySelector("input");
+                let span = document.createElement("span");
+                span.innerText = input.value;
+                div.innerHTML = "";
+                div.appendChild(span);
+                div.dataset.mode = "view";
+                this.selectElement(div, "initiative");
+            }
+
+            selectElement(el, type) {
+                document.querySelectorAll(`#${type}List div`).forEach(d => d.classList.remove("selected"));
+                if (el) {
+                    el.classList.add("selected");
+                }
+            }
+
+            selectNext(type) {
+                let selected = document.querySelector(`#${type}List .selected`);
+                if (selected && selected.nextElementSibling) {
+                    this.selectElement(selected.nextElementSibling, type);
+                } else {
+                    if (type === "initiative") {
+                        selected = document.querySelector("#" + type + "List ." + type);
+                    }
+                    this.selectElement(selected, type);
+                }
+
+                if (type === "calc") {
+                    let newSelected = document.querySelector("#" + type + "List .selected");
+                    if (newSelected) {
+                        newSelected.firstElementChild.focus();
+                    }
+                }
+            }
+
+            selectPrev(type) {
+                let selected = document.querySelector(`#${type}List .selected`);
+                if (selected && selected.previousElementSibling) {
+                    this.selectElement(selected.previousElementSibling, type);
+                } else {
+                    selected = document.querySelector("#" + type + "List ." + type);
+                    this.selectElement(selected, type);
+                }
+
+                if (type === "calc") {
+                    let newSelected = document.querySelector("#" + type + "List .selected");
+                    if (newSelected) {
+                        newSelected.firstElementChild.focus();
+                    }
+                }
+            }
+
+            moveDown(type) {
+                let selected = document.querySelector(`#${type}List .selected`);
+                if (selected && selected.nextElementSibling) {
+                    selected.parentNode.insertBefore(selected.nextElementSibling, selected);
+                }
+            }
+
+            moveUp(type) {
+                let selected = document.querySelector(`#${type}List .selected`);
+                if (selected && selected.previousElementSibling) {
+                    selected.parentNode.insertBefore(selected, selected.previousElementSibling);
+                }
+            }
+
+            enableKeybindings() {
+                document.addEventListener("keydown", this.keydownListener);
+                this.updateActivePanel(); // Set initial active panel
+            }
+
+            disableKeybindings() {
+                document.removeEventListener("keydown", this.keydownListener);
+            }
+        }
+
         // ============================================
         // MONSTER GENERATOR
         // ============================================
@@ -2823,11 +3223,14 @@ const MONSTERS = {
         // ============================================
         let mazeGenerator;
         let dungeonGenerator; // Declare dungeonGenerator here
+        let dmTools; // Declare dmTools here
 
         function init() {
             initTabs();
             mazeGenerator = new MazeGenerator('maze-canvas');
             dungeonGenerator = new DungeonGenerator('dungeon-canvas'); // Initialize dungeonGenerator
+            dmTools = new DmTools(); // Initialize dmTools
+            dmTools.init(); // Initialize DM tool specific event listeners
 
             document.getElementById('monster-chance').addEventListener('input', (e) => {
                 document.getElementById('monster-chance-val').textContent = e.target.value + '%';
