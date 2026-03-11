@@ -1587,7 +1587,7 @@ const MONSTERS = {
                 corridor: '#3a3a3a', // New color for dungeon corridors
                 pool: '#4facfe', // New color for pools
                 trap: '#ff7e5f', // New color for traps
-                secret: '#8e2de2' // New color for secret passages
+                secret: '#cccccc' // Lighter gray for secret passages
             },
             maze: {
                 cellSize: 20,
@@ -1604,7 +1604,7 @@ const MONSTERS = {
                 }
             },
             dungeon: {
-                cellSize: 8, // Smaller cells for larger dungeons
+                cellSize: 16, // Larger cells for better visibility of items/labels
                 defaultWidth: 50,
                 defaultHeight: 50,
                 maxSize: 100,
@@ -2178,26 +2178,38 @@ const MONSTERS = {
                 return true;
             }
 
-            // Connects all rooms
+            // Connects all rooms ensuring full connectivity
             connectAllRooms() {
                 if (this.rooms.length < 2) return;
 
-                // Simple connection: connect each room to its nearest neighbor
-                for (let i = 0; i < this.rooms.length; i++) {
-                    let nearestRoom = null;
+                const connectedRooms = new Set();
+                connectedRooms.add(this.rooms[0]); // Start with the first room
+
+                const unconnectedRooms = new Set(this.rooms.slice(1)); // All other rooms are initially unconnected
+
+                while (unconnectedRooms.size > 0) {
+                    let bestPair = null;
                     let minDistance = Infinity;
 
-                    for (let j = 0; j < this.rooms.length; j++) {
-                        if (i === j) continue;
-
-                        const dist = this.getRoomDistance(this.rooms[i], this.rooms[j]);
-                        if (dist < minDistance) {
-                            minDistance = dist;
-                            nearestRoom = this.rooms[j];
+                    // Find the closest pair between a connected room and an unconnected room
+                    for (const roomA of connectedRooms) {
+                        for (const roomB of unconnectedRooms) {
+                            const dist = this.getRoomDistance(roomA, roomB);
+                            if (dist < minDistance) {
+                                minDistance = dist;
+                                bestPair = { roomA, roomB };
+                            }
                         }
                     }
-                    if (nearestRoom) {
-                        this.createCorridor(this.rooms[i], nearestRoom);
+
+                    if (bestPair) {
+                        this.createCorridor(bestPair.roomA, bestPair.roomB);
+                        connectedRooms.add(bestPair.roomB);
+                        unconnectedRooms.delete(bestPair.roomB);
+                    } else {
+                        // Should not happen if there are still unconnected rooms, but as a safeguard
+                        console.warn("Could not find a path to connect all rooms. Remaining unconnected rooms:", unconnectedRooms);
+                        break; 
                     }
                 }
             }
@@ -2299,8 +2311,13 @@ const MONSTERS = {
                     }
                 }
 
-                // Place secret passages (just marking a tile for now)
-                if (features.secrets) {
+                // Place secret passages
+                if (features.secrets && availableFloorCells.length > 0) {
+                    // Guarantee at least one secret passage
+                    const { x: x1, y: y1 } = availableFloorCells.pop();
+                    this.grid[y1][x1] = 6; // Mark as secret
+                    this.features.push({ x: x1, y: y1, type: 'secret' });
+
                     const numSecrets = Math.floor(availableFloorCells.length * CONFIG.dungeon.featureChance / 2);
                     for (let i = 0; i < numSecrets && availableFloorCells.length > 0; i++) {
                         const { x, y } = availableFloorCells.pop();
@@ -2536,26 +2553,38 @@ const MONSTERS = {
                     for (let x = 0; x < this.width; x++) {
                         const cx = x * this.cellSize;
                         const cy = y * this.cellSize;
+                        let label = '';
+                        let fillColor = CONFIG.colors.wall;
 
                         if (this.grid[y][x] === 0) {
-                            this.ctx.fillStyle = CONFIG.colors.wall;
+                            fillColor = CONFIG.colors.wall;
                         } else if (this.grid[y][x] === 2) { // Entrance
-                            this.ctx.fillStyle = CONFIG.colors.entrance;
+                            fillColor = CONFIG.colors.entrance;
+                            label = 'E';
                         } else if (this.grid[y][x] === 3) { // Exit
-                            this.ctx.fillStyle = CONFIG.colors.exit;
+                            fillColor = CONFIG.colors.exit;
+                            label = 'X';
                         } else if (this.grid[y][x] === 4) { // Pool
-                            this.ctx.fillStyle = CONFIG.colors.pool;
+                            fillColor = CONFIG.colors.pool;
+                            label = 'P';
                         } else if (this.grid[y][x] === 5) { // Trap
-                            this.ctx.fillStyle = CONFIG.colors.trap;
+                            fillColor = CONFIG.colors.trap;
+                            label = 'T';
                         } else if (this.grid[y][x] === 6) { // Secret
-                            this.ctx.fillStyle = CONFIG.colors.secret;
+                            fillColor = CONFIG.colors.secret;
+                            label = 'S';
                         }
                          else if (roomGrid[y][x]) {
-                            this.ctx.fillStyle = CONFIG.colors.room;
-                        } else {
-                            this.ctx.fillStyle = CONFIG.colors.corridor;
+                            fillColor = CONFIG.colors.room;
+                        } else if (this.grid[y][x] === 1) {
+                            fillColor = CONFIG.colors.corridor;
                         }
+                        this.ctx.fillStyle = fillColor;
                         this.ctx.fillRect(cx, cy, this.cellSize, this.cellSize);
+
+                        if (label) {
+                            this.drawLabel(label, cx + this.cellSize / 2, cy + this.cellSize / 2, CONFIG.colors.text_primary);
+                        }
                     }
                 }
 
@@ -2563,6 +2592,14 @@ const MONSTERS = {
                 this.drawCustomContents(this.customContents.items, CONFIG.colors.item);
                 this.drawCustomContents(this.customContents.npcs, CONFIG.colors.npc);
                 this.drawCustomContents(this.customContents.monsters, CONFIG.colors.monster);
+            }
+
+            drawLabel(text, x, y, color) {
+                this.ctx.fillStyle = color;
+                this.ctx.font = `${this.cellSize / 2}px Arial`;
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(text, x, y);
             }
 
             drawCustomContents(contents, color) {
@@ -2577,330 +2614,84 @@ const MONSTERS = {
                         this.ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
                         this.ctx.fill();
 
-                        // Draw text label
-                        this.ctx.fillStyle = CONFIG.colors.text_primary;
-                        this.ctx.font = `${this.cellSize / 2}px Arial`;
-                        this.ctx.textAlign = 'center';
-                        this.ctx.textBaseline = 'middle';
-                        this.ctx.fillText(item.name, cx, cy - this.cellSize / 2);
+                        // Draw text label below the circle
+                        this.drawLabel(item.name, cx, cy + this.cellSize / 2 - 2, CONFIG.colors.text_primary);
                     }
                 });
             }
 
 
-                        exportSVG() {
-
-
-                            const w = this.width * this.cellSize;
-
-
-                            const h = this.height * this.cellSize;
-
-
-                            const cs = this.cellSize;
-
-
-            
-
-
-                            let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
-
-
-                            svg += `<rect width="${w}" height="${h}" fill="${CONFIG.colors.background}"/>`; // Use background for full canvas
-
-
-            
-
-
-                            // Create a temporary grid to mark room cells
-
-
-                            const roomGrid = Array(this.height).fill(null).map(() => Array(this.width).fill(false));
-
-
-                            this.rooms.forEach(room => {
-
-
-                                for (let y = room.y; y < room.y + room.height; y++) {
-
-
-                                    for (let x = room.x; x < room.x + room.width; x++) {
-
-
-                                        roomGrid[y][x] = true;
-
-
-                                    }
-
-
-                                }
-
-
-                            });
-
-
-            
-
-
-                            for (let y = 0; y < this.height; y++) {
-
-
-                                for (let x = 0; x < this.width; x++) {
-
-
-                                    const cx = x * cs;
-
-
-                                    const cy = y * cs;
-
-
-            
-
-
-                                    let fillColor = CONFIG.colors.background; // Default to background if outside grid or unknown
-
-
-            
-
-
-                                    if (this.grid[y][x] === 0) {
-
-
-                                        fillColor = CONFIG.colors.wall;
-
-
-                                    } else if (this.grid[y][x] === 2) { // Entrance
-
-
-                                        fillColor = CONFIG.colors.entrance;
-
-
-                                    } else if (this.grid[y][x] === 3) { // Exit
-
-
-                                        fillColor = CONFIG.colors.exit;
-
-
-                                    } else if (this.grid[y][x] === 4) { // Pool
-
-
-                                        fillColor = CONFIG.colors.pool;
-
-
-                                    } else if (this.grid[y][x] === 5) { // Trap
-
-
-                                        fillColor = CONFIG.colors.trap;
-
-
-                                    } else if (this.grid[y][x] === 6) { // Secret
-
-
-                                        fillColor = CONFIG.colors.secret;
-
-
-                                    } else if (roomGrid[y][x]) {
-
-
-                                        fillColor = CONFIG.colors.room;
-
-
-                                    } else if (this.grid[y][x] === 1) { // Regular floor/corridor
-
-
-                                        fillColor = CONFIG.colors.corridor;
-
-
-                                    }
-
-
-                                    svg += `<rect x="${cx}" y="${cy}" width="${cs}" height="${cs}" fill="${fillColor}"/>`;
-
-
-                                }
-
-
-                            }
-
-
-            
-
-
-                                            // Export custom contents
-
-
-            
-
-
-                                            this.customContents.items.forEach(item => {
-
-
-            
-
-
-                                                if (item.x !== null && item.y !== null) {
-
-
-            
-
-
-                                                    const cx = (item.x + 0.5) * cs;
-
-
-            
-
-
-                                                    const cy = (item.y + 0.5) * cs;
-
-
-            
-
-
-                                                    const size = cs / 2.5;
-
-
-            
-
-
-                                                    svg += `<circle cx="${cx}" cy="${cy}" r="${size / 2}" fill="${CONFIG.colors.item}"/>`;
-
-
-            
-
-
-                                                    svg += `<text x="${cx}" y="${cy - cs / 2}" font-family="Arial" font-size="${cs / 2}" fill="${CONFIG.colors.text_primary}" text-anchor="middle" dominant-baseline="middle">${item.name}</text>`;
-
-
-            
-
-
-                                                }
-
-
-            
-
-
-                                            });
-
-
-            
-
-
-                                            this.customContents.npcs.forEach(item => {
-
-
-            
-
-
-                                                if (item.x !== null && item.y !== null) {
-
-
-            
-
-
-                                                    const cx = (item.x + 0.5) * cs;
-
-
-            
-
-
-                                                    const cy = (item.y + 0.5) * cs;
-
-
-            
-
-
-                                                    const size = cs / 2.5;
-
-
-            
-
-
-                                                    svg += `<circle cx="${cx}" cy="${cy}" r="${size / 2}" fill="${CONFIG.colors.npc}"/>`;
-
-
-            
-
-
-                                                    svg += `<text x="${cx}" y="${cy - cs / 2}" font-family="Arial" font-size="${cs / 2}" fill="${CONFIG.colors.text_primary}" text-anchor="middle" dominant-baseline="middle">${item.name}</text>`;
-
-
-            
-
-
-                                                }
-
-
-            
-
-
-                                            });
-
-
-            
-
-
-                                            this.customContents.monsters.forEach(item => {
-
-
-            
-
-
-                                                if (item.x !== null && item.y !== null) {
-
-
-            
-
-
-                                                    const cx = (item.x + 0.5) * cs;
-
-
-            
-
-
-                                                    const cy = (item.y + 0.5) * cs;
-
-
-            
-
-
-                                                    const size = cs / 2.5;
-
-
-            
-
-
-                                                    svg += `<circle cx="${cx}" cy="${cy}" r="${size / 2}" fill="${CONFIG.colors.monster}"/>`;
-
-
-            
-
-
-                                                    svg += `<text x="${cx}" y="${cy - cs / 2}" font-family="Arial" font-size="${cs / 2}" fill="${CONFIG.colors.text_primary}" text-anchor="middle" dominant-baseline="middle">${item.name}</text>`;
-
-
-            
-
-
-                                                }
-
-
-            
-
-
-                                            });
-
-
-            
-
-
-                            svg += '</svg>';
-
-
-                            return svg;
-
-
-                        }        }
+            exportSVG() {
+                const w = this.width * this.cellSize;
+                const h = this.height * this.cellSize;
+                const cs = this.cellSize;
+
+                let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+                svg += `<rect width="${w}" height="${h}" fill="${CONFIG.colors.background}"/>`; // Use background for full canvas
+
+                // Create a temporary grid to mark room cells
+                const roomGrid = Array(this.height).fill(null).map(() => Array(this.width).fill(false));
+                this.rooms.forEach(room => {
+                    for (let y = room.y; y < room.y + room.height; y++) {
+                        for (let x = room.x; x < room.x + room.width; x++) {
+                            roomGrid[y][x] = true;
+                        }
+                    }
+                });
+
+                for (let y = 0; y < this.height; y++) {
+                    for (let x = 0; x < this.width; x++) {
+                        const cx = x * cs;
+                        const cy = y * cs;
+                        let label = '';
+                        let fillColor = CONFIG.colors.wall;
+
+                        if (this.grid[y][x] === 0) {
+                            fillColor = CONFIG.colors.wall;
+                        } else if (this.grid[y][x] === 2) { // Entrance
+                            fillColor = CONFIG.colors.entrance;
+                            label = 'E';
+                        } else if (this.grid[y][x] === 3) { // Exit
+                            fillColor = CONFIG.colors.exit;
+                            label = 'X';
+                        } else if (this.grid[y][x] === 4) { // Pool
+                            fillColor = CONFIG.colors.pool;
+                            label = 'P';
+                        } else if (this.grid[y][x] === 5) { // Trap
+                            fillColor = CONFIG.colors.trap;
+                            label = 'T';
+                        } else if (this.grid[y][x] === 6) { // Secret
+                            fillColor = CONFIG.colors.secret;
+                            label = 'S';
+                        } else if (roomGrid[y][x]) {
+                            fillColor = CONFIG.colors.room;
+                        } else if (this.grid[y][x] === 1) { // Regular floor/corridor
+                            fillColor = CONFIG.colors.corridor;
+                        }
+                        svg += `<rect x="${cx}" y="${cy}" width="${cs}" height="${cs}" fill="${fillColor}"/>`;
+                        if (label) {
+                            svg += `<text x="${cx + cs / 2}" y="${cy + cs / 2}" font-family="Arial" font-size="${cs / 2}" fill="${CONFIG.colors.text_primary}" text-anchor="middle" dominant-baseline="middle">${label}</text>`;
+                        }
+                    }
+                }
+
+                // Export custom contents
+                ['items', 'npcs', 'monsters'].forEach(type => {
+                    this.customContents[type].forEach(item => {
+                        if (item.x !== null && item.y !== null) {
+                            const cx = (item.x + 0.5) * cs;
+                            const cy = (item.y + 0.5) * cs;
+                            const size = cs / 2.5;
+
+                            svg += `<circle cx="${cx}" cy="${cy}" r="${size / 2}" fill="${CONFIG.colors[type.slice(0, -1)]}"/>`;
+                            svg += `<text x="${cx}" y="${cy + cs / 2 - 2}" font-family="Arial" font-size="${cs / 2}" fill="${CONFIG.colors.text_primary}" text-anchor="middle" dominant-baseline="middle">${item.name}</text>`;
+                        }
+                    });
+                });
+
+                svg += '</svg>';
+                return svg;
+            }        }
         // ============================================
         // MONSTER GENERATOR
         // ============================================
