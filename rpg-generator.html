@@ -2077,21 +2077,16 @@ const MONSTERS = {
             constructor(canvasId) {
                 this.canvas = document.getElementById(canvasId);
                 this.ctx = this.canvas.getContext('2d');
-                this.grid = []; // 0: wall, 1: floor
+                this.grid = []; // 0: wall, 1: floor, 2: entrance, 3: exit, 4: pool, 5: trap, 6: secret
                 this.rooms = [];
-                this.corridors = [];
-                this.features = []; // Stores placed features (pools, traps, secrets)
+                this.features = []; 
+                this.entrances = [];
+                this.exits = [];
                 this.customContents = {
                     items: [],
                     npcs: [],
                     monsters: []
                 };
-
-                // Cellular Automata parameters
-                this.fillProbability = 0.45; // % chance a cell starts as a floor
-                this.deathLimit = 3;       // A floor cell with fewer than this many floor neighbors dies
-                this.birthLimit = 4;       // A wall cell with more than this many floor neighbors becomes a floor
-                this.numIterations = 4;    // Number of simulation steps
 
                 // Interaction variables
                 this.selectedContent = null;
@@ -2112,280 +2107,245 @@ const MONSTERS = {
                 this.canvas.height = height * this.cellSize;
 
                 this.rooms = [];
-                this.corridors = [];
-                this.features = features;
+                this.entrances = [];
+                this.exits = [];
+                this.features = []; // Store actual feature locations
                 this.customContents = customContents;
 
-                // Step 1: Random Initialization
-                this.grid = Array(height).fill(null).map(() => Array(width).fill(0));
-                for (let y = 0; y < height; y++) {
-                    for (let x = 0; x < width; x++) {
-                        if (Math.random() < this.fillProbability) {
-                            this.grid[y][x] = 1; // Floor
-                        } else {
-                            this.grid[y][x] = 0; // Wall
-                        }
-                    }
-                }
+                // 1. Initialize grid with walls
+                this.grid = Array(height).fill(null).map(() => Array(width).fill(0)); // 0: wall
 
-                // Step 2: Cellular Automata Simulation
-                for (let i = 0; i < this.numIterations; i++) {
-                    this.grid = this.doSimulationStep(this.grid);
-                }
+                // 2. Place rooms
+                this.placeRooms(numRooms);
 
-                // Step 3: Remove small regions and connect remaining ones
-                this.removeSmallRegions();
-                this.connectRegions();
+                // 3. Connect rooms
+                this.connectAllRooms();
 
-                // Step 4: Identify rooms
-                this.identifyRooms();
-
-                // Step 5: Place entrances and exits
+                // 4. Place entrances and exits
                 this.placeEntrancesExits(numEntrances, numExits);
 
-                // Step 6: Place features
+                // 5. Place features
                 this.placeFeatures(features);
 
-                // Step 7: Place custom contents
+                // 6. Place custom contents
                 this.placeCustomContent(customContents);
                 
                 this.draw();
             }
 
-            // Performs one step of the cellular automata simulation
-            doSimulationStep(oldGrid) {
-                const newGrid = Array(this.height).fill(null).map(() => Array(this.width).fill(0));
+            // Helper to place rooms
+            placeRooms(numRooms) {
+                const minRoomSize = 5;
+                const maxRoomSize = 15;
+                let attempts = numRooms * 5; // Attempt to place more than requested to account for failures
 
-                for (let y = 0; y < this.height; y++) {
-                    for (let x = 0; x < this.width; x++) {
-                        const aliveNeighbors = this.countAliveNeighbors(oldGrid, x, y);
+                while (this.rooms.length < numRooms && attempts > 0) {
+                    const roomWidth = Math.floor(Math.random() * (maxRoomSize - minRoomSize + 1)) + minRoomSize;
+                    const roomHeight = Math.floor(Math.random() * (maxRoomSize - minRoomSize + 1)) + minRoomSize;
+                    const x = Math.floor(Math.random() * (this.width - roomWidth - 1)) + 1; // +1 to avoid border walls
+                    const y = Math.floor(Math.random() * (this.height - roomHeight - 1)) + 1; // +1 to avoid border walls
 
-                        if (oldGrid[y][x] === 1) { // If current cell is a floor
-                            if (aliveNeighbors < this.deathLimit) {
-                                newGrid[y][x] = 0; // Becomes a wall
-                            } else {
-                                newGrid[y][x] = 1; // Remains a floor
+                    if (this.isValidRoomPlacement(x, y, roomWidth, roomHeight)) {
+                        const newRoom = { x, y, width: roomWidth, height: roomHeight };
+                        this.rooms.push(newRoom);
+
+                        for (let ry = y; ry < y + roomHeight; ry++) {
+                            for (let rx = x; rx < x + roomWidth; rx++) {
+                                this.grid[ry][rx] = 1; // Mark as floor
                             }
-                        } else { // If current cell is a wall
-                            if (aliveNeighbors > this.birthLimit) {
-                                newGrid[y][x] = 1; // Becomes a floor
-                            } else {
-                                newGrid[y][x] = 0; // Remains a wall
-                            }
                         }
                     }
-                }
-                return newGrid;
-            }
-
-            // Counts the number of floor cells in the 8-directional neighborhood
-            countAliveNeighbors(grid, x, y) {
-                let count = 0;
-                for (let i = -1; i <= 1; i++) {
-                    for (let j = -1; j <= 1; j++) {
-                        if (i === 0 && j === 0) continue; // Skip self
-
-                        const nx = x + j;
-                        const ny = y + i;
-
-                        if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height) {
-                            if (grid[ny][nx] === 1) {
-                                count++;
-                            }
-                        } else {
-                            // Cells outside the grid are considered walls for boundary smoothing
-                            count++; 
-                        }
-                    }
-                }
-                return count;
-            }
-
-            // Finds all connected floor regions and returns them
-            getConnectedRegions() {
-                const regions = [];
-                const visited = Array(this.height).fill(null).map(() => Array(this.width).fill(false));
-
-                for (let y = 0; y < this.height; y++) {
-                    for (let x = 0; x < this.width; x++) {
-                        if (this.grid[y][x] === 1 && !visited[y][x]) {
-                            const newRegion = [];
-                            this.floodFill(x, y, newRegion, visited);
-                            regions.push(newRegion);
-                        }
-                    }
-                }
-                return regions;
-            }
-
-            // Helper for flood-fill algorithm
-            floodFill(startX, startY, region, visited) {
-                const stack = [{ x: startX, y: startY }];
-                visited[startY][startX] = true;
-
-                while (stack.length > 0) {
-                    const { x, y } = stack.pop();
-                    region.push({ x, y });
-
-                    const neighbors = [
-                        { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
-                        { dx: -1, dy: 0 }, { dx: 1, dy: 0 }
-                    ];
-
-                    for (const { dx, dy } of neighbors) {
-                        const nx = x + dx;
-                        const ny = y + dy;
-
-                        if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height &&
-                            this.grid[ny][nx] === 1 && !visited[ny][nx]) {
-                            visited[ny][nx] = true;
-                            stack.push({ x: nx, y: ny });
-                        }
-                    }
+                    attempts--;
                 }
             }
 
-            // Removes regions smaller than minRegionSize
-            removeSmallRegions() {
-                const regions = this.getConnectedRegions();
-                const minSize = CONFIG.dungeon.minRegionSize;
+            // Checks if a room can be placed without overlapping existing rooms or walls
+            isValidRoomPlacement(x, y, width, height) {
+                // Check boundaries
+                if (x <= 0 || y <= 0 || x + width >= this.width -1 || y + height >= this.height - 1) {
+                    return false;
+                }
 
-                let mainRegion = null;
-                let maxArea = 0;
-
-                regions.forEach(region => {
-                    if (region.length > maxArea) {
-                        maxArea = region.length;
-                        mainRegion = region;
+                // Check for overlap with existing rooms, with a small buffer
+                for (const existingRoom of this.rooms) {
+                    if (x < existingRoom.x + existingRoom.width + 1 &&
+                        x + width > existingRoom.x - 1 &&
+                        y < existingRoom.y + existingRoom.height + 1 &&
+                        y + height > existingRoom.y - 1) {
+                        return false; // Overlaps
                     }
-                });
-
-                this.grid = Array(this.height).fill(null).map(() => Array(this.width).fill(0)); // Reset grid to all walls
-
-                if (mainRegion) {
-                    mainRegion.forEach(({ x, y }) => {
-                        this.grid[y][x] = 1; // Keep main region
-                    });
                 }
-
-                // Also keep regions that are large enough but not necessarily the main one
-                regions.forEach(region => {
-                    if (region.length >= minSize && region !== mainRegion) {
-                        region.forEach(({ x, y }) => {
-                            this.grid[y][x] = 1;
-                        });
-                    }
-                });
-
-                 // Ensure a border of walls
-                 for (let y = 0; y < this.height; y++) {
-                    this.grid[y][0] = 0;
-                    this.grid[y][this.width - 1] = 0;
-                }
-                for (let x = 0; x < this.width; x++) {
-                    this.grid[0][x] = 0;
-                    this.grid[this.height - 1][x] = 0;
-                }
+                return true;
             }
 
-            // Connects isolated regions
-            connectRegions() {
-                let regions = this.getConnectedRegions();
-                if (regions.length <= 1) return; // Already connected or too few regions
+            // Connects all rooms
+            connectAllRooms() {
+                if (this.rooms.length < 2) return;
 
-                // Sort regions by size to connect smaller ones to larger ones
-                regions.sort((a, b) => a.length - b.length);
-
-                for (let i = 0; i < regions.length - 1; i++) {
-                    const regionA = regions[i];
-                    const regionB = regions[i + 1]; // Connect to the next larger region
-
-                    let bestPath = null;
+                // Simple connection: connect each room to its nearest neighbor
+                for (let i = 0; i < this.rooms.length; i++) {
+                    let nearestRoom = null;
                     let minDistance = Infinity;
 
-                    // Find the closest points between two regions
-                    for (const p1 of regionA) {
-                        for (const p2 of regionB) {
-                            const dist = Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y); // Manhattan distance
+                    for (let j = 0; j < this.rooms.length; j++) {
+                        if (i === j) continue;
 
-                            if (dist < minDistance) {
-                                minDistance = dist;
-                                bestPath = { p1, p2 };
-                            }
+                        const dist = this.getRoomDistance(this.rooms[i], this.rooms[j]);
+                        if (dist < minDistance) {
+                            minDistance = dist;
+                            nearestRoom = this.rooms[j];
                         }
                     }
-
-                    if (bestPath) {
-                        // "Dig" a corridor between the two closest points
-                        this.carveCorridor(bestPath.p1, bestPath.p2);
+                    if (nearestRoom) {
+                        this.createCorridor(this.rooms[i], nearestRoom);
                     }
                 }
             }
 
-            // Carves a simple corridor between two points
-            carveCorridor(p1, p2) {
-                let currX = p1.x;
-                let currY = p1.y;
-
-                while (currX !== p2.x || currY !== p2.y) {
-                    this.grid[currY][currX] = 1; // Make it a floor
-
-                    if (currX < p2.x) currX++;
-                    else if (currX > p2.x) currX--;
-                    else if (currY < p2.y) currY++;
-                    else if (currY > p2.y) currY--;
-                }
-                this.grid[p2.y][p2.x] = 1; // Ensure the target point is also a floor
+            getRoomDistance(roomA, roomB) {
+                const centerA = { x: roomA.x + roomA.width / 2, y: roomA.y + roomA.height / 2 };
+                const centerB = { x: roomB.x + roomB.width / 2, y: roomB.y + roomB.height / 2 };
+                return Math.abs(centerA.x - centerB.x) + Math.abs(centerA.y - centerB.y);
             }
 
-            // Identifies rectangular rooms from the processed grid
-            identifyRooms() {
-                this.rooms = [];
-                const visited = Array(this.height).fill(null).map(() => Array(this.width).fill(false));
+            // Creates a corridor between two rooms
+            createCorridor(roomA, roomB) {
+                let startX = Math.floor(roomA.x + roomA.width / 2);
+                let startY = Math.floor(roomA.y + roomA.height / 2);
+                let endX = Math.floor(roomB.x + roomB.width / 2);
+                let endY = Math.floor(roomB.y + roomB.height / 2);
 
+                while (startX !== endX || startY !== endY) {
+                    this.grid[startY][startX] = 1; // Mark as floor
+
+                    if (Math.abs(startX - endX) > Math.abs(startY - endY)) {
+                        if (startX < endX) startX++;
+                        else startX--;
+                    } else {
+                        if (startY < endY) startY++;
+                        else startY--;
+                    }
+                }
+                this.grid[endY][endX] = 1; // Ensure endpoint is floor
+            }
+
+            // Places entrances and exits
+            placeEntrancesExits(numEntrances, numExits) {
+                const potentialSpots = [];
+                // Prioritize room edges for entrances/exits
+                this.rooms.forEach(room => {
+                    for (let x = room.x; x < room.x + room.width; x++) {
+                        potentialSpots.push({ x, y: room.y }); // Top edge
+                        potentialSpots.push({ x, y: room.y + room.height - 1 }); // Bottom edge
+                    }
+                    for (let y = room.y; y < room.y + room.height; y++) {
+                        potentialSpots.push({ x: room.x, y }); // Left edge
+                        potentialSpots.push({ x: room.x + room.width - 1, y }); // Right edge
+                    }
+                });
+
+                this.shuffleArray(potentialSpots);
+
+                this.entrances = [];
+                for (let i = 0; i < numEntrances && potentialSpots.length > 0; i++) {
+                    const { x, y } = potentialSpots.pop();
+                    if (this.grid[y][x] === 1) { // Ensure it's a floor tile
+                        this.grid[y][x] = 2; // Mark as entrance
+                        this.entrances.push({ x, y });
+                    }
+                }
+
+                this.exits = [];
+                for (let i = 0; i < numExits && potentialSpots.length > 0; i++) {
+                    const { x, y } = potentialSpots.pop();
+                    if (this.grid[y][x] === 1) { // Ensure it's a floor tile
+                        this.grid[y][x] = 3; // Mark as exit
+                        this.exits.push({ x, y });
+                    }
+                }
+            }
+
+            // Places features (pools, traps, secrets)
+            placeFeatures(features) {
+                this.features = []; // Clear previous features
+                const availableFloorCells = [];
                 for (let y = 1; y < this.height - 1; y++) {
                     for (let x = 1; x < this.width - 1; x++) {
-                        if (this.grid[y][x] === 1 && !visited[y][x]) {
-                            // Attempt to find a rectangular room
-                            let roomWidth = 0;
-                            let roomHeight = 0;
-
-                            // Find width
-                            for (let w = x; w < this.width - 1; w++) {
-                                if (this.grid[y][w] === 1 && !visited[y][w]) {
-                                    roomWidth++;
-                                } else {
-                                    break;
-                                }
-                            }
-
-                            // Find height
-                            for (let h = y; h < this.height - 1; h++) {
-                                let rowIsFloor = true;
-                                for (let w = 0; w < roomWidth; w++) {
-                                    if (this.grid[h][x + w] === 0 || visited[h][x + w]) {
-                                        rowIsFloor = false;
-                                        break;
-                                    }
-                                }
-                                if (rowIsFloor) {
-                                    roomHeight++;
-                                } else {
-                                    break;
-                                }
-                            }
-
-                            if (roomWidth > 2 && roomHeight > 2) { // Minimum room size
-                                this.rooms.push({ x: x, y: y, width: roomWidth, height: roomHeight });
-                                // Mark cells as visited
-                                for (let ry = y; ry < y + roomHeight; ry++) {
-                                    for (let rx = x; rx < x + roomWidth; rx++) {
-                                        visited[ry][rx] = true;
-                                    }
-                                }
-                            }
+                        // Only place on regular floor tiles (1) not already special (2,3,4,5,6)
+                        if (this.grid[y][x] === 1) {
+                            availableFloorCells.push({ x, y });
                         }
                     }
+                }
+                this.shuffleArray(availableFloorCells);
+
+                // Place pools
+                if (features.pools) {
+                    const numPools = Math.floor(availableFloorCells.length * CONFIG.dungeon.featureChance / 2);
+                    for (let i = 0; i < numPools && availableFloorCells.length > 0; i++) {
+                        const { x, y } = availableFloorCells.pop();
+                        this.grid[y][x] = 4; // Mark as pool
+                        this.features.push({ x, y, type: 'pool' });
+                    }
+                }
+
+                // Place traps
+                if (features.traps) {
+                    const numTraps = Math.floor(availableFloorCells.length * CONFIG.dungeon.featureChance);
+                    for (let i = 0; i < numTraps && availableFloorCells.length > 0; i++) {
+                        const { x, y } = availableFloorCells.pop();
+                        this.grid[y][x] = 5; // Mark as trap
+                        this.features.push({ x, y, type: 'trap' });
+                    }
+                }
+
+                // Place secret passages (just marking a tile for now)
+                if (features.secrets) {
+                    const numSecrets = Math.floor(availableFloorCells.length * CONFIG.dungeon.featureChance / 2);
+                    for (let i = 0; i < numSecrets && availableFloorCells.length > 0; i++) {
+                        const { x, y } = availableFloorCells.pop();
+                        this.grid[y][x] = 6; // Mark as secret
+                        this.features.push({ x, y, type: 'secret' });
+                    }
+                }
+            }
+
+            // Places custom content (items, npcs, monsters)
+            placeCustomContent(customContents) {
+                // Reset positions of existing custom content
+                customContents.items.forEach(c => { c.x = null; c.y = null; });
+                customContents.npcs.forEach(c => { c.x = null; c.y = null; });
+                customContents.monsters.forEach(c => { c.x = null; c.y = null; });
+
+                const availableFloorCells = [];
+                for (let y = 1; y < this.height - 1; y++) {
+                    for (let x = 1; x < this.width - 1; x++) {
+                        // Only place on regular floor tiles (1) not already special (2,3,4,5,6)
+                        if (this.grid[y][x] === 1) {
+                            availableFloorCells.push({ x, y });
+                        }
+                    }
+                }
+                this.shuffleArray(availableFloorCells);
+
+                ['items', 'npcs', 'monsters'].forEach(type => {
+                    customContents[type].forEach(content => {
+                        if (availableFloorCells.length > 0) {
+                            const { x, y } = availableFloorCells.pop();
+                            content.x = x;
+                            content.y = y;
+                        } else {
+                            console.warn(`Not enough space to place all custom ${type}!`);
+                        }
+                    });
+                });
+            }
+
+            // Helper to shuffle an array (Fisher-Yates)
+            shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
                 }
             }
 
