@@ -307,7 +307,10 @@
             background-color: var(--bg-primary); /* Use primary background */
             color: var(--text-primary); /* Use primary text color */
             flex-grow: 1; /* Allow it to take up available space */
-            display: flex; /* Make #dm-content a flex container */
+            /* This content area is managed by the .tab-content.active display: block/flex rules */
+        }
+        #dm-content.active { /* Apply flexbox only when active */
+            display: flex;
             flex-direction: column; /* Stack children vertically */
         }
         #dm-content a {
