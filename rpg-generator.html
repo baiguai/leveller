@@ -1775,6 +1775,7 @@ const MONSTERS = {
                 minRooms: 5,
                 roomVsHallDefault: 50, // 50% rooms vs halls
                 featureChance: 0.1, // 10% chance for special features
+                secretPassageChance: 0.02, // 2% chance for a corridor cell to be a secret passage
                 minRegionSize: 15 // Minimum number of floor cells for a region to be kept
             }
         };
@@ -2290,6 +2291,7 @@ const MONSTERS = {
                 this.exits = [];
                 this.features = []; // Store actual feature locations
                 this.customContents = customContents;
+                this.featuresEnabled = features; // Store features for use in createCorridor
 
                 // 1. Initialize grid with walls
                 this.grid = Array(height).fill(null).map(() => Array(width).fill(0)); // 0: wall
@@ -2407,7 +2409,12 @@ const MONSTERS = {
                 let endY = Math.floor(roomB.y + roomB.height / 2);
 
                 while (startX !== endX || startY !== endY) {
-                    this.grid[startY][startX] = 1; // Mark as floor
+                    // Conditionally mark as secret passage if feature is enabled and chance passes
+                    if (this.featuresEnabled.secrets && Math.random() < CONFIG.dungeon.secretPassageChance) {
+                        this.grid[startY][startX] = 6; // Mark as secret passage
+                    } else {
+                        this.grid[startY][startX] = 1; // Mark as regular floor
+                    }
 
                     if (Math.abs(startX - endX) > Math.abs(startY - endY)) {
                         if (startX < endX) startX++;
@@ -2417,7 +2424,12 @@ const MONSTERS = {
                         else startY--;
                     }
                 }
-                this.grid[endY][endX] = 1; // Ensure endpoint is floor
+                // Ensure endpoint is also conditionally marked as secret or regular floor
+                if (this.featuresEnabled.secrets && Math.random() < CONFIG.dungeon.secretPassageChance) {
+                    this.grid[endY][endX] = 6; // Mark as secret passage
+                } else {
+                    this.grid[endY][endX] = 1; // Mark as regular floor
+                }
             }
 
             // Places entrances and exits
@@ -2490,20 +2502,8 @@ const MONSTERS = {
                     }
                 }
 
-                // Place secret passages
-                if (features.secrets && availableFloorCells.length > 0) {
-                    // Guarantee at least one secret passage
-                    const { x: x1, y: y1 } = availableFloorCells.pop();
-                    this.grid[y1][x1] = 6; // Mark as secret
-                    this.features.push({ x: x1, y: y1, type: 'secret' });
-
-                    const numSecrets = Math.floor(availableFloorCells.length * CONFIG.dungeon.featureChance / 2);
-                    for (let i = 0; i < numSecrets && availableFloorCells.length > 0; i++) {
-                        const { x, y } = availableFloorCells.pop();
-                        this.grid[y][x] = 6; // Mark as secret
-                        this.features.push({ x, y, type: 'secret' });
-                    }
-                }
+                // Secret passages are now handled within createCorridor based on a chance.
+                // No direct placement of 'secret' cells in placeFeatures.
             }
 
             // Places custom content (items, npcs, monsters)
@@ -2751,7 +2751,7 @@ const MONSTERS = {
                             label = 'T';
                         } else if (this.grid[y][x] === 6) { // Secret
                             fillColor = CONFIG.colors.secret;
-                            label = 'S';
+                            // label = 'S'; // Removed label as per user request
                         }
                          else if (roomGrid[y][x]) {
                             fillColor = CONFIG.colors.room;
@@ -2841,7 +2841,7 @@ const MONSTERS = {
                             label = 'T';
                         } else if (this.grid[y][x] === 6) { // Secret
                             fillColor = CONFIG.colors.secret;
-                            label = 'S';
+                            // label = 'S'; // Removed label as per user request
                         } else if (roomGrid[y][x]) {
                             fillColor = CONFIG.colors.room;
                         } else if (this.grid[y][x] === 1) { // Regular floor/corridor
