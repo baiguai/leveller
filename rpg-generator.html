@@ -303,7 +303,6 @@
         }
 
         #dm-content {
-            display: flex;
             height: calc(100vh - 100px); /* Adjust based on header/footer heights */
             background-color: var(--bg-primary); /* Use primary background */
             color: var(--text-primary); /* Use primary text color */
@@ -621,6 +620,7 @@
                 <div class="nav-tab" data-tab="dungeon">Dungeon</div>
                 <div class="nav-tab" data-tab="monster">Monster</div>
                 <div class="nav-tab" data-tab="player">Player (5E)</div>
+                <div class="nav-tab" data-tab="dm">DM Tools</div>
             </nav>
         </aside>
 
@@ -967,6 +967,38 @@
                         <div class="control-group">
                             <label>Coming soon...</label>
                         </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="dm-content">
+                    <div id="dicePanel" class="panel">
+                        <h3>Dice Roller</h3>
+                        <input type="text" id="diceInput" placeholder="e.g., 2d6, 1d20+5">
+                        <div id="diceResults"></div>
+                    </div>
+
+                    <div id="notesPanel" class="panel">
+                        <h3>Notes</h3>
+                        <textarea id="notesArea" placeholder="Your notes here..."></textarea>
+                    </div>
+
+                    <div id="initiativePanel" class="panel">
+                        <h3>Initiative Tracker</h3>
+                        <div id="initiativeList"></div>
+                    </div>
+
+                    <div id="calcPanel" class="panel">
+                        <h3>Calculators</h3>
+                        <div id="calcList"></div>
+                    </div>
+
+                    <div id="linksPanel" class="panel">
+                        <h3>Quick Links</h3>
+                        <ul>
+                            <li><a href="https://www.dndbeyond.com/" target="_blank">D&D Beyond</a></li>
+                            <li><a href="https://roll20.net/" target="_blank">Roll20</a></li>
+                            <li><a href="https://www.fantasygrounds.com/home/home.xcp" target="_blank">Fantasy Grounds</a></li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -1709,7 +1741,8 @@ const MONSTERS = {
             building: 'Building Generator',
             dungeon: 'Dungeon Generator',
             monster: 'Monster Generator',
-            player: 'Player (5E) Generator'
+            player: 'Player (5E) Generator',
+            dm: 'DM Tools'
         };
 
         function initTabs() {
