@@ -689,8 +689,8 @@
                                 <label for="include-monsters">Monsters</label>
                             </div>
                             <div class="percentage-group">
-                                <input type="range" id="monster-chance" min="1" max="100" value="15">
-                                <span id="monster-chance-val">15%</span>
+                                <input type="range" id="monster-chance" min="1" max="100" value="2">
+                                <span id="monster-chance-val">2%</span>
                             </div>
 
                             <div class="checkbox-item">
@@ -698,8 +698,8 @@
                                 <label for="include-items">Items</label>
                             </div>
                             <div class="percentage-group">
-                                <input type="range" id="item-chance" min="1" max="100" value="10">
-                                <span id="item-chance-val">10%</span>
+                                <input type="range" id="item-chance" min="1" max="100" value="2">
+                                <span id="item-chance-val">2%</span>
                             </div>
 
                             <div class="checkbox-item">
@@ -3657,7 +3657,7 @@ const MONSTERS = {
                 CONFIG.maze.defaultHeight,
                 'recursive-backtracker',
                 'moderate',
-                { monsters: { enabled: true, chance: 15 }, items: { enabled: true, chance: 10 }, npcs: { enabled: false, chance: 5 } }
+                { monsters: { enabled: true, chance: 2 }, items: { enabled: true, chance: 2 }, npcs: { enabled: false, chance: 5 } }
             );
         }
 
