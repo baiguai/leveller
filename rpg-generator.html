@@ -852,6 +852,7 @@
                     <div class="btn-row">
                         <button class="btn btn-primary" id="generate-dungeon">Generate Dungeon</button>
                         <button class="btn btn-secondary" id="save-dungeon">Save as SVG</button>
+                        <button class="btn btn-secondary" id="reset-dungeon">Reset</button>
                     </div>
 
                     <div class="canvas-container">
@@ -3312,6 +3313,43 @@ const MONSTERS = {
         let dungeonGenerator; // Declare dungeonGenerator here
         let dmTools; // Declare dmTools here
 
+        // Function to reset dungeon generator to default settings
+        function resetDungeon() {
+            // Reset input fields to their default values
+            document.getElementById('dungeon-width').value = CONFIG.dungeon.defaultWidth;
+            document.getElementById('dungeon-height').value = CONFIG.dungeon.defaultHeight;
+            document.getElementById('dungeon-entrances').value = 1;
+            document.getElementById('dungeon-exits').value = 1;
+            document.getElementById('dungeon-rooms').value = 10;
+            document.getElementById('dungeon-room-vs-hall').value = CONFIG.dungeon.roomVsHallDefault;
+            document.getElementById('dungeon-room-vs-hall-val').textContent = CONFIG.dungeon.roomVsHallDefault + '% Rooms';
+
+            // Reset feature checkboxes
+            document.getElementById('include-pools').checked = false;
+            document.getElementById('include-traps').checked = false;
+            document.getElementById('include-secrets').checked = false;
+
+            // Clear custom content lists
+            dungeonCustomContents.items = [];
+            dungeonCustomContents.npcs = [];
+            dungeonCustomContents.monsters = [];
+            renderCustomContentList('items');
+            renderCustomContentList('npcs');
+            renderCustomContentList('monsters');
+
+            // Generate a new dungeon with default settings
+            dungeonGenerator.generate(
+                CONFIG.dungeon.defaultWidth,
+                CONFIG.dungeon.defaultHeight,
+                1, // Default entrances
+                1, // Default exits
+                10, // Default rooms
+                CONFIG.dungeon.roomVsHallDefault, // Default room vs hall ratio
+                { pools: false, traps: false, secrets: false }, // Default features
+                dungeonCustomContents
+            );
+        }
+
         function init() {
             initTabs();
             mazeGenerator = new MazeGenerator('maze-canvas');
@@ -3337,6 +3375,9 @@ const MONSTERS = {
             document.getElementById('dungeon-add-item-btn').addEventListener('click', () => addCustomContent('items'));
             document.getElementById('dungeon-add-npc-btn').addEventListener('click', () => addCustomContent('npcs'));
             document.getElementById('dungeon-add-monster-btn').addEventListener('click', () => addCustomContent('monsters'));
+
+            // Add event listener for the new reset button
+            document.getElementById('reset-dungeon').addEventListener('click', resetDungeon);
 
             renderCustomContentList('items');
             renderCustomContentList('npcs');
