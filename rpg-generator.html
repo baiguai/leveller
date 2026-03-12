@@ -303,7 +303,7 @@
         }
 
         #dm-content {
-            /* Removed fixed height: height: calc(100vh - 100px); */
+            height: calc(100vh - 100px);
             background-color: var(--bg-primary); /* Use primary background */
             color: var(--text-primary); /* Use primary text color */
             flex-grow: 1; /* Allow it to take up available space */
@@ -335,20 +335,24 @@
         }
 
         #dm-content #dicePanel, #dm-content #calcPanel {
+            min-height: 400px;
             width: 200px;
             flex-shrink: 0;
         }
         #dm-content #centerPanel {
+            min-height: 400px;
             flex-grow: 1;
             display: flex;
             flex-direction: column;
         }
         #dm-content #initiativePanel {
+            min-height: 400px;
             flex: 1;
             border: 1px solid var(--border);
             overflow-y: auto;
         }
         #dm-content #notesPanel {
+            min-height: 400px;
             flex: 1;
             border: 1px solid var(--border);
             display: flex;
@@ -1026,24 +1030,24 @@
                             <h3>Key Bindings</h3>
                             <ul>
                                 <li><b>h/l</b>: Navigate panels (Left/Right)<br /></li>
-                                <li><b>Dice Roller</b>:</li>
+                                <li><br /><b>Dice Roller</b>:</li>
                                 <ul>
                                     <li><b>Enter</b>: Roll dice<br /></li>
                                 </ul>
-                                <li><b>Notes</b>:</li>
+                                <li><br /><b>Notes</b>:</li>
                                 <ul>
                                     <li><b>i / Enter</b>: Focus/Edit notes area</li>
                                     <li><b>Escape</b>: Stop editing notes<br /></li>
                                 </ul>
-                                <li><b>Initiative Tracker</b>:</li>
+                                <li><br /><b>Initiative Tracker</b>:</li>
                                 <ul>
                                     <li><b>a</b>: Add new entry</li>
                                     <li><b>d</b>: Delete selected entry</li>
-                                    <li><b>j/K</b>: Select next/previous entry</li>
+                                    <li><b>j/k</b>: Select next/previous entry</li>
                                     <li><b>J/K</b>: Move selected entry Down/Up</li>
                                     <li><b>Enter</b>: Toggle edit mode for entry<br /></li>
                                 </ul>
-                                <li><b>Calculators</b>:</li>
+                                <li><br /><b>Calculators</b>:</li>
                                 <ul>
                                     <li><b>a</b>: Add new calculator input</li>
                                     <li><b>d</b>: Delete selected calculator input</li>
@@ -2362,6 +2366,7 @@ const MONSTERS = {
             // Connects all rooms ensuring full connectivity
             connectAllRooms() {
                 if (this.rooms.length < 2) return;
+                let isSecret = false;
 
                 const connectedRooms = new Set();
                 connectedRooms.add(this.rooms[0]); // Start with the first room
@@ -2384,7 +2389,11 @@ const MONSTERS = {
                     }
 
                     if (bestPair) {
-                        this.createCorridor(bestPair.roomA, bestPair.roomB);
+                        if (this.featuresEnabled.secrets && Math.random() < CONFIG.dungeon.secretPassageChance) {
+                            isSecret = true;
+                        }
+
+                        this.createCorridor(bestPair.roomA, bestPair.roomB, isSecret);
                         connectedRooms.add(bestPair.roomB);
                         unconnectedRooms.delete(bestPair.roomB);
                     } else {
@@ -2402,7 +2411,7 @@ const MONSTERS = {
             }
 
             // Creates a corridor between two rooms
-            createCorridor(roomA, roomB) {
+            createCorridor(roomA, roomB, isSecret) {
                 let startX = Math.floor(roomA.x + roomA.width / 2);
                 let startY = Math.floor(roomA.y + roomA.height / 2);
                 let endX = Math.floor(roomB.x + roomB.width / 2);
@@ -2410,7 +2419,7 @@ const MONSTERS = {
 
                 while (startX !== endX || startY !== endY) {
                     // Conditionally mark as secret passage if feature is enabled and chance passes
-                    if (this.featuresEnabled.secrets && Math.random() < CONFIG.dungeon.secretPassageChance) {
+                    if (isSecret) {
                         this.grid[startY][startX] = 6; // Mark as secret passage
                     } else {
                         this.grid[startY][startX] = 1; // Mark as regular floor
@@ -2425,7 +2434,7 @@ const MONSTERS = {
                     }
                 }
                 // Ensure endpoint is also conditionally marked as secret or regular floor
-                if (this.featuresEnabled.secrets && Math.random() < CONFIG.dungeon.secretPassageChance) {
+                if (isSecret) {
                     this.grid[endY][endX] = 6; // Mark as secret passage
                 } else {
                     this.grid[endY][endX] = 1; // Mark as regular floor
@@ -2501,9 +2510,6 @@ const MONSTERS = {
                         this.features.push({ x, y, type: 'trap' });
                     }
                 }
-
-                // Secret passages are now handled within createCorridor based on a chance.
-                // No direct placement of 'secret' cells in placeFeatures.
             }
 
             // Places custom content (items, npcs, monsters)
@@ -2606,15 +2612,6 @@ const MONSTERS = {
                     for (let i = 0; i < numTraps && availableFloorCells.length > 0; i++) {
                         const { x, y } = availableFloorCells.pop();
                         this.grid[y][x] = 5; // Mark as trap
-                    }
-                }
-
-                // Place secret passages (just marking a tile for now)
-                if (features.secrets) {
-                    const numSecrets = Math.floor(availableFloorCells.length * CONFIG.dungeon.featureChance / 2);
-                    for (let i = 0; i < numSecrets && availableFloorCells.length > 0; i++) {
-                        const { x, y } = availableFloorCells.pop();
-                        this.grid[y][x] = 6; // Mark as secret
                     }
                 }
             }
@@ -2749,9 +2746,8 @@ const MONSTERS = {
                         } else if (this.grid[y][x] === 5) { // Trap
                             fillColor = CONFIG.colors.trap;
                             label = 'T';
-                        } else if (this.grid[y][x] === 6) { // Secret
+                        } else if (this.grid[y][x] === 6 && !roomGrid[y][x]) { // Secret
                             fillColor = CONFIG.colors.secret;
-                            // label = 'S'; // Removed label as per user request
                         }
                          else if (roomGrid[y][x]) {
                             fillColor = CONFIG.colors.room;
@@ -2839,9 +2835,8 @@ const MONSTERS = {
                         } else if (this.grid[y][x] === 5) { // Trap
                             fillColor = CONFIG.colors.trap;
                             label = 'T';
-                        } else if (this.grid[y][x] === 6) { // Secret
+                        } else if (this.grid[y][x] === 6 && !roomGrid[y][x]) { // Secret
                             fillColor = CONFIG.colors.secret;
-                            // label = 'S'; // Removed label as per user request
                         } else if (roomGrid[y][x]) {
                             fillColor = CONFIG.colors.room;
                         } else if (this.grid[y][x] === 1) { // Regular floor/corridor
