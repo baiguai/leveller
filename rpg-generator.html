@@ -302,6 +302,104 @@
             height: 12px;
         }
 
+        #dm-content {
+            height: calc(100vh - 100px);
+            background-color: var(--bg-primary); /* Use primary background */
+            color: var(--text-primary); /* Use primary text color */
+            flex-grow: 1; /* Allow it to take up available space */
+            /* This content area is managed by the .tab-content.active display: block/flex rules */
+        }
+        #dm-content.active { /* Apply flexbox only when active */
+            display: flex;
+            flex-direction: column; /* Stack children vertically */
+        }
+        #dm-content a {
+            color: var(--text-secondary); /* Use secondary text for links */
+        }
+        #dm-content .panel {
+            border: 1px solid var(--border);
+            padding: 12px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        #dm-panels-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px; /* Spacing between panels */
+            padding: 15px; /* Padding inside the DM content area */
+            align-items: flex-start; /* Align panels to the top */
+            flex-grow: 1; /* Allow panels container to grow */
+            overflow-y: auto; /* Enable scrolling for panels if content overflows */
+            align-content: flex-start; /* Distribute rows to the start of the container */
+        }
+
+        #dm-content #dicePanel, #dm-content #calcPanel {
+            min-height: 400px;
+            width: 200px;
+            flex-shrink: 0;
+        }
+        #dm-content #centerPanel {
+            min-height: 400px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        #dm-content #initiativePanel {
+            min-height: 400px;
+            flex: 1;
+            border: 1px solid var(--border);
+            overflow-y: auto;
+        }
+        #dm-content #notesPanel {
+            min-height: 400px;
+            flex: 1;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+        #dm-content #notesPanel textarea {
+            flex: 1;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            outline: none;
+            resize: none;
+            padding: 8px; /* Added padding for consistency */
+        }
+        #dm-content #linksPanel {
+            border: 1px solid var(--border);
+            height: 150px; /* Fixed height for links panel */
+            overflow-y: auto;
+            margin-top: 10px; /* Spacing */
+        }
+        #dm-content .active {
+            border: 2px solid var(--accent) !important;
+            box-shadow: 0 0 6px var(--accent); /* Use accent color for glow */
+        }
+        #dm-content .calc, #dm-content .initiative {
+            display: flex;
+            margin: 2px 0;
+        }
+        #dm-content .calc input, #dm-content .initiative input {
+            flex: 1;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            outline: none;
+            padding: 4px; /* Added padding */
+        }
+        #dm-content .initiative span {
+            flex: 1;
+            padding: 2px;
+        }
+        #dm-content .selected {
+            background: var(--bg-tertiary); /* Use tertiary background for selected */
+        }
+        #dm-content #diceResults {
+            margin-top: 8px;
+        }
+
         .monster-panel {
             display: flex;
             gap: 20px;
@@ -486,6 +584,49 @@
             outline: none;
             border-color: var(--accent);
         }
+
+        .item-list, .npc-list, .monster-list {
+            list-style: none;
+            padding: 0;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg-primary);
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+
+        .item-list-item, .npc-list-item, .monster-list-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-primary);
+        }
+
+        .item-list-item:last-child, .npc-list-item:last-child, .monster-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-list-item span, .npc-list-item span, .monster-list-item span {
+            flex-grow: 1;
+            cursor: pointer;
+        }
+
+        .remove-btn {
+            background-color: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1rem;
+            margin-left: 10px;
+        }
+
+        .remove-btn:hover {
+            color: var(--accent);
+        }
     </style>
 </head>
 <body>
@@ -501,6 +642,7 @@
                 <div class="nav-tab" data-tab="dungeon">Dungeon</div>
                 <div class="nav-tab" data-tab="monster">Monster</div>
                 <div class="nav-tab" data-tab="player">Player (5E)</div>
+                <div class="nav-tab" data-tab="dm">DM Tools</div>
             </nav>
         </aside>
 
@@ -547,8 +689,8 @@
                                 <label for="include-monsters">Monsters</label>
                             </div>
                             <div class="percentage-group">
-                                <input type="range" id="monster-chance" min="1" max="100" value="15">
-                                <span id="monster-chance-val">15%</span>
+                                <input type="range" id="monster-chance" min="1" max="100" value="2">
+                                <span id="monster-chance-val">2%</span>
                             </div>
 
                             <div class="checkbox-item">
@@ -556,8 +698,8 @@
                                 <label for="include-items">Items</label>
                             </div>
                             <div class="percentage-group">
-                                <input type="range" id="item-chance" min="1" max="100" value="10">
-                                <span id="item-chance-val">10%</span>
+                                <input type="range" id="item-chance" min="1" max="100" value="2">
+                                <span id="item-chance-val">2%</span>
                             </div>
 
                             <div class="checkbox-item">
@@ -639,8 +781,82 @@
                     <div class="controls-panel">
                         <h3>Dungeon Settings</h3>
                         <div class="control-group">
-                            <label>Coming soon...</label>
+                            <label for="dungeon-width">Width (cells)</label>
+                            <input type="number" id="dungeon-width" value="50" min="10" max="100">
                         </div>
+                        <div class="control-group">
+                            <label for="dungeon-height">Height (cells)</label>
+                            <input type="number" id="dungeon-height" value="50" min="10" max="100">
+                        </div>
+                        <div class="control-group">
+                            <label for="dungeon-entrances">Number of Entrances</label>
+                            <input type="number" id="dungeon-entrances" value="1" min="1" max="5">
+                        </div>
+                        <div class="control-group">
+                            <label for="dungeon-exits">Number of Exits</label>
+                            <input type="number" id="dungeon-exits" value="1" min="1" max="5">
+                        </div>
+                        <div class="control-group">
+                            <label for="dungeon-rooms">Number of Rooms</label>
+                            <input type="number" id="dungeon-rooms" value="10" min="5" max="50">
+                        </div>
+                        <div class="control-group">
+                            <label for="dungeon-room-vs-hall">Room vs. Hall Ratio</label>
+                            <input type="range" id="dungeon-room-vs-hall" min="0" max="100" value="50">
+                            <span id="dungeon-room-vs-hall-val">50% Rooms</span>
+                        </div>
+                    </div>
+
+                    <div class="controls-panel">
+                        <h3>Features</h3>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="include-pools">
+                                <label for="include-pools">Pools</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="include-traps">
+                                <label for="include-traps">Traps</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="include-secrets">
+                                <label for="include-secrets">Secret Passages</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="controls-panel">
+                        <h3>Custom Contents (Drag to move, Double-click to rename)</h3>
+                        <div class="control-group">
+                            <label for="dungeon-add-item">Add Item</label>
+                            <input type="text" id="dungeon-add-item" placeholder="e.g., Gold, Potion, Sword">
+                            <button class="btn btn-secondary" id="dungeon-add-item-btn">Add</button>
+                        </div>
+                        <ul id="dungeon-items-list"></ul>
+
+                        <div class="control-group">
+                            <label for="dungeon-add-npc">Add NPC</label>
+                            <input type="text" id="dungeon-add-npc" placeholder="e.g., Merchant, Guard">
+                            <button class="btn btn-secondary" id="dungeon-add-npc-btn">Add</button>
+                        </div>
+                        <ul id="dungeon-npcs-list"></ul>
+
+                        <div class="control-group">
+                            <label for="dungeon-add-monster">Add Monster</label>
+                            <input type="text" id="dungeon-add-monster" placeholder="e.g., Goblin, Orc">
+                            <button class="btn btn-secondary" id="dungeon-add-monster-btn">Add</button>
+                        </div>
+                        <ul id="dungeon-monsters-list"></ul>
+                    </div>
+
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="generate-dungeon">Generate Dungeon</button>
+                        <button class="btn btn-secondary" id="save-dungeon">Save as SVG</button>
+                        <button class="btn btn-secondary" id="reset-dungeon">Reset</button>
+                    </div>
+
+                    <div class="canvas-container">
+                        <canvas id="dungeon-canvas"></canvas>
                     </div>
                 </div>
 
@@ -773,6 +989,73 @@
                         <h3>Player Character Settings</h3>
                         <div class="control-group">
                             <label>Coming soon...</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="dm-content">
+                    <div id="dm-panels-container">
+                        <div id="dicePanel" class="panel">
+                            <h3>Dice Roller</h3>
+                            <input type="text" id="diceInput" placeholder="e.g., 2d6, 1d20+5">
+                            <div id="diceResults"></div>
+                        </div>
+
+                        <div id="notesPanel" class="panel">
+                            <h3>Notes</h3>
+                            <textarea id="notesArea" placeholder="Your notes here..."></textarea>
+                        </div>
+
+                        <div id="initiativePanel" class="panel">
+                            <h3>Initiative Tracker</h3>
+                            <div id="initiativeList"></div>
+                        </div>
+
+                        <div id="calcPanel" class="panel">
+                            <h3>Calculators</h3>
+                            <div id="calcList"></div>
+                        </div>
+
+                        <div id="linksPanel" class="panel">
+                            <h3>Quick Links</h3>
+                            <ul>
+                                <li><a href="https://www.dndbeyond.com/" target="_blank">D&D Beyond</a></li>
+                                <li><a href="https://roll20.net/" target="_blank">Roll20</a></li>
+                                <li><a href="https://www.fantasygrounds.com/home/home.xcp" target="_blank">Fantasy Grounds</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div id="keybindingsPanel" class="panel">
+                            <h3>Key Bindings</h3>
+                            <ul>
+                                <li><b>h/l</b>: Navigate panels (Left/Right)<br /></li>
+                                <li><br /><b>Dice Roller</b>:</li>
+                                <ul>
+                                    <li><b>Enter</b>: Roll dice<br /></li>
+                                </ul>
+                                <li><br /><b>Notes</b>:</li>
+                                <ul>
+                                    <li><b>i / Enter</b>: Focus/Edit notes area</li>
+                                    <li><b>Escape</b>: Stop editing notes<br /></li>
+                                </ul>
+                                <li><br /><b>Initiative Tracker</b>:</li>
+                                <ul>
+                                    <li><b>a</b>: Add new entry</li>
+                                    <li><b>d</b>: Delete selected entry</li>
+                                    <li><b>j/k</b>: Select next/previous entry</li>
+                                    <li><b>J/K</b>: Move selected entry Down/Up</li>
+                                    <li><b>Enter</b>: Toggle edit mode for entry<br /></li>
+                                </ul>
+                                <li><br /><b>Calculators</b>:</li>
+                                <ul>
+                                    <li><b>a</b>: Add new calculator input</li>
+                                    <li><b>d</b>: Delete selected calculator input</li>
+                                    <li><b>j/k</b>: Select next/previous calculator input</li>
+                                    <li><b>Enter</b>: Evaluate selected input</li>
+                                </ul>
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -1459,14 +1742,19 @@ const MONSTERS = {
         const CONFIG = {
             colors: {
                 background: '#1a1a2e',
-                wall: '#e8e8e8',
-                path: '#16213e',
+                wall: '#7A6F5C', /* Earthy brown for maze/dungeon walls */
+                path: '#3A3228', /* Darker earthy brown for maze paths */
                 entrance: '#e94560',
                 exit: '#4ade80',
                 grid: '#2a2a4a',
                 monster: '#ef4444',
                 item: '#fbbf24',
-                npc: '#60a5fa'
+                npc: '#60a5fa',
+                room: '#5C5245', /* Earthy brown for dungeon rooms */
+                corridor: '#4E453C', /* Darker earthy brown for dungeon corridors */
+                pool: '#4facfe',
+                trap: '#ff7e5f',
+                secret: '#cccccc'
             },
             maze: {
                 cellSize: 20,
@@ -1481,6 +1769,19 @@ const MONSTERS = {
                     complex: 0.25,
                     chaotic: 0.5
                 }
+            },
+            dungeon: {
+                cellSize: 16, // Larger cells for better visibility of items/labels
+                defaultWidth: 50,
+                defaultHeight: 50,
+                maxSize: 100,
+                minSize: 20,
+                maxRooms: 50,
+                minRooms: 5,
+                roomVsHallDefault: 50, // 50% rooms vs halls
+                featureChance: 0.1, // 10% chance for special features
+                secretPassageChance: 0.02, // 2% chance for a corridor cell to be a secret passage
+                minRegionSize: 15 // Minimum number of floor cells for a region to be kept
             }
         };
 
@@ -1499,32 +1800,49 @@ const MONSTERS = {
             building: 'Building Generator',
             dungeon: 'Dungeon Generator',
             monster: 'Monster Generator',
-            player: 'Player (5E) Generator'
+            player: 'Player (5E) Generator',
+            dm: 'DM Tools'
         };
+
+        function activateTab(tabElement) {
+            const tabId = tabElement.dataset.tab;
+
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            tabElement.classList.add('active');
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tabId}-content`).classList.add('active');
+
+            document.getElementById('tab-title').textContent = tabNames[tabId];
+
+            // Enable/disable DM Tools keybindings based on active tab
+            if (dmTools) { // Check if dmTools is initialized
+                if (tabId === 'dm') {
+                    dmTools.enableKeybindings();
+                } else {
+                    dmTools.disableKeybindings();
+                }
+            }
+
+            if (tabId === 'monster') {
+                loadMonsters();
+            }
+        }
 
         function initTabs() {
             const tabs = document.querySelectorAll('.nav-tab');
-            const titleEl = document.getElementById('tab-title');
-
+            
             tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const tabId = tab.dataset.tab;
-
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-
-                    document.querySelectorAll('.tab-content').forEach(content => {
-                        content.classList.remove('active');
-                    });
-                    document.getElementById(`${tabId}-content`).classList.add('active');
-
-                    titleEl.textContent = tabNames[tabId];
-
-                    if (tabId === 'monster') {
-                        loadMonsters();
-                    }
-                });
+                tab.addEventListener('click', () => activateTab(tab));
             });
+
+            // Activate the default tab on initial load
+            const initialActiveTab = document.querySelector('.nav-tab.active');
+            if (initialActiveTab) {
+                activateTab(initialActiveTab);
+            }
         }
 
         // ============================================
@@ -1938,6 +2256,931 @@ const MONSTERS = {
         }
 
         // ============================================
+        // DUNGEON GENERATOR
+        // ============================================
+        class DungeonGenerator {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.grid = []; // 0: wall, 1: floor, 2: entrance, 3: exit, 4: pool, 5: trap, 6: secret
+                this.rooms = [];
+                this.features = []; 
+                this.entrances = [];
+                this.exits = [];
+                this.customContents = {
+                    items: [],
+                    npcs: [],
+                    monsters: []
+                };
+
+                // Interaction variables
+                this.selectedContent = null;
+                this.isDragging = false;
+
+                // Event Listeners for interaction
+                this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
+                this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
+                this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
+                document.addEventListener('keydown', this.onKeyDown.bind(this));
+            }
+
+            generate(width, height, numEntrances, numExits, numRooms, roomVsHallRatio, features, customContents) {
+                this.width = width;
+                this.height = height;
+                this.cellSize = CONFIG.dungeon.cellSize;
+                this.canvas.width = width * this.cellSize;
+                this.canvas.height = height * this.cellSize;
+
+                this.rooms = [];
+                this.entrances = [];
+                this.exits = [];
+                this.features = []; // Store actual feature locations
+                this.customContents = customContents;
+                this.featuresEnabled = features; // Store features for use in createCorridor
+
+                // 1. Initialize grid with walls
+                this.grid = Array(height).fill(null).map(() => Array(width).fill(0)); // 0: wall
+
+                // 2. Place rooms
+                this.placeRooms(numRooms);
+
+                // 3. Connect rooms
+                this.connectAllRooms();
+
+                // 4. Place entrances and exits
+                this.placeEntrancesExits(numEntrances, numExits);
+
+                // 5. Place features
+                this.placeFeatures(features);
+
+                // 6. Place custom contents
+                this.placeCustomContent(customContents);
+                
+                this.draw();
+            }
+
+            // Helper to place rooms
+            placeRooms(numRooms) {
+                const minRoomSize = 5;
+                const maxRoomSize = 15;
+                let attempts = numRooms * 5; // Attempt to place more than requested to account for failures
+
+                while (this.rooms.length < numRooms && attempts > 0) {
+                    const roomWidth = Math.floor(Math.random() * (maxRoomSize - minRoomSize + 1)) + minRoomSize;
+                    const roomHeight = Math.floor(Math.random() * (maxRoomSize - minRoomSize + 1)) + minRoomSize;
+                    const x = Math.floor(Math.random() * (this.width - roomWidth - 1)) + 1; // +1 to avoid border walls
+                    const y = Math.floor(Math.random() * (this.height - roomHeight - 1)) + 1; // +1 to avoid border walls
+
+                    if (this.isValidRoomPlacement(x, y, roomWidth, roomHeight)) {
+                        const newRoom = { x, y, width: roomWidth, height: roomHeight };
+                        this.rooms.push(newRoom);
+
+                        for (let ry = y; ry < y + roomHeight; ry++) {
+                            for (let rx = x; rx < x + roomWidth; rx++) {
+                                this.grid[ry][rx] = 1; // Mark as floor
+                            }
+                        }
+                    }
+                    attempts--;
+                }
+            }
+
+            // Checks if a room can be placed without overlapping existing rooms or walls
+            isValidRoomPlacement(x, y, width, height) {
+                // Check boundaries
+                if (x <= 0 || y <= 0 || x + width >= this.width -1 || y + height >= this.height - 1) {
+                    return false;
+                }
+
+                // Check for overlap with existing rooms, with a small buffer
+                for (const existingRoom of this.rooms) {
+                    if (x < existingRoom.x + existingRoom.width + 1 &&
+                        x + width > existingRoom.x - 1 &&
+                        y < existingRoom.y + existingRoom.height + 1 &&
+                        y + height > existingRoom.y - 1) {
+                        return false; // Overlaps
+                    }
+                }
+                return true;
+            }
+
+            // Connects all rooms ensuring full connectivity
+            connectAllRooms() {
+                if (this.rooms.length < 2) return;
+                let isSecret = false;
+
+                const connectedRooms = new Set();
+                connectedRooms.add(this.rooms[0]); // Start with the first room
+
+                const unconnectedRooms = new Set(this.rooms.slice(1)); // All other rooms are initially unconnected
+
+                while (unconnectedRooms.size > 0) {
+                    let bestPair = null;
+                    let minDistance = Infinity;
+
+                    // Find the closest pair between a connected room and an unconnected room
+                    for (const roomA of connectedRooms) {
+                        for (const roomB of unconnectedRooms) {
+                            const dist = this.getRoomDistance(roomA, roomB);
+                            if (dist < minDistance) {
+                                minDistance = dist;
+                                bestPair = { roomA, roomB };
+                            }
+                        }
+                    }
+
+                    if (bestPair) {
+                        if (this.featuresEnabled.secrets && Math.random() < CONFIG.dungeon.secretPassageChance) {
+                            isSecret = true;
+                        }
+
+                        this.createCorridor(bestPair.roomA, bestPair.roomB, isSecret);
+                        connectedRooms.add(bestPair.roomB);
+                        unconnectedRooms.delete(bestPair.roomB);
+                    } else {
+                        // Should not happen if there are still unconnected rooms, but as a safeguard
+                        console.warn("Could not find a path to connect all rooms. Remaining unconnected rooms:", unconnectedRooms);
+                        break; 
+                    }
+                }
+            }
+
+            getRoomDistance(roomA, roomB) {
+                const centerA = { x: roomA.x + roomA.width / 2, y: roomA.y + roomA.height / 2 };
+                const centerB = { x: roomB.x + roomB.width / 2, y: roomB.y + roomB.height / 2 };
+                return Math.abs(centerA.x - centerB.x) + Math.abs(centerA.y - centerB.y);
+            }
+
+            // Creates a corridor between two rooms
+            createCorridor(roomA, roomB, isSecret) {
+                let startX = Math.floor(roomA.x + roomA.width / 2);
+                let startY = Math.floor(roomA.y + roomA.height / 2);
+                let endX = Math.floor(roomB.x + roomB.width / 2);
+                let endY = Math.floor(roomB.y + roomB.height / 2);
+
+                while (startX !== endX || startY !== endY) {
+                    // Conditionally mark as secret passage if feature is enabled and chance passes
+                    if (isSecret) {
+                        this.grid[startY][startX] = 6; // Mark as secret passage
+                    } else {
+                        this.grid[startY][startX] = 1; // Mark as regular floor
+                    }
+
+                    if (Math.abs(startX - endX) > Math.abs(startY - endY)) {
+                        if (startX < endX) startX++;
+                        else startX--;
+                    } else {
+                        if (startY < endY) startY++;
+                        else startY--;
+                    }
+                }
+                // Ensure endpoint is also conditionally marked as secret or regular floor
+                if (isSecret) {
+                    this.grid[endY][endX] = 6; // Mark as secret passage
+                } else {
+                    this.grid[endY][endX] = 1; // Mark as regular floor
+                }
+            }
+
+            // Places entrances and exits
+            placeEntrancesExits(numEntrances, numExits) {
+                const potentialSpots = [];
+                // Prioritize room edges for entrances/exits
+                this.rooms.forEach(room => {
+                    for (let x = room.x; x < room.x + room.width; x++) {
+                        potentialSpots.push({ x, y: room.y }); // Top edge
+                        potentialSpots.push({ x, y: room.y + room.height - 1 }); // Bottom edge
+                    }
+                    for (let y = room.y; y < room.y + room.height; y++) {
+                        potentialSpots.push({ x: room.x, y }); // Left edge
+                        potentialSpots.push({ x: room.x + room.width - 1, y }); // Right edge
+                    }
+                });
+
+                this.shuffleArray(potentialSpots);
+
+                this.entrances = [];
+                for (let i = 0; i < numEntrances && potentialSpots.length > 0; i++) {
+                    const { x, y } = potentialSpots.pop();
+                    if (this.grid[y][x] === 1) { // Ensure it's a floor tile
+                        this.grid[y][x] = 2; // Mark as entrance
+                        this.entrances.push({ x, y });
+                    }
+                }
+
+                this.exits = [];
+                for (let i = 0; i < numExits && potentialSpots.length > 0; i++) {
+                    const { x, y } = potentialSpots.pop();
+                    if (this.grid[y][x] === 1) { // Ensure it's a floor tile
+                        this.grid[y][x] = 3; // Mark as exit
+                        this.exits.push({ x, y });
+                    }
+                }
+            }
+
+            // Places features (pools, traps, secrets)
+            placeFeatures(features) {
+                this.features = []; // Clear previous features
+                const availableFloorCells = [];
+                for (let y = 1; y < this.height - 1; y++) {
+                    for (let x = 1; x < this.width - 1; x++) {
+                        // Only place on regular floor tiles (1) not already special (2,3,4,5,6)
+                        if (this.grid[y][x] === 1) {
+                            availableFloorCells.push({ x, y });
+                        }
+                    }
+                }
+                this.shuffleArray(availableFloorCells);
+
+                // Place pools
+                if (features.pools) {
+                    const numPools = Math.floor(availableFloorCells.length * CONFIG.dungeon.featureChance / 2);
+                    for (let i = 0; i < numPools && availableFloorCells.length > 0; i++) {
+                        const { x, y } = availableFloorCells.pop();
+                        this.grid[y][x] = 4; // Mark as pool
+                        this.features.push({ x, y, type: 'pool' });
+                    }
+                }
+
+                // Place traps
+                if (features.traps) {
+                    const numTraps = Math.floor(availableFloorCells.length * CONFIG.dungeon.featureChance);
+                    for (let i = 0; i < numTraps && availableFloorCells.length > 0; i++) {
+                        const { x, y } = availableFloorCells.pop();
+                        this.grid[y][x] = 5; // Mark as trap
+                        this.features.push({ x, y, type: 'trap' });
+                    }
+                }
+            }
+
+            // Places custom content (items, npcs, monsters)
+            placeCustomContent(customContents) {
+                // Reset positions of existing custom content
+                customContents.items.forEach(c => { c.x = null; c.y = null; });
+                customContents.npcs.forEach(c => { c.x = null; c.y = null; });
+                customContents.monsters.forEach(c => { c.x = null; c.y = null; });
+
+                const availableFloorCells = [];
+                for (let y = 1; y < this.height - 1; y++) {
+                    for (let x = 1; x < this.width - 1; x++) {
+                        // Only place on regular floor tiles (1) not already special (2,3,4,5,6)
+                        if (this.grid[y][x] === 1) {
+                            availableFloorCells.push({ x, y });
+                        }
+                    }
+                }
+                this.shuffleArray(availableFloorCells);
+
+                ['items', 'npcs', 'monsters'].forEach(type => {
+                    customContents[type].forEach(content => {
+                        if (availableFloorCells.length > 0) {
+                            const { x, y } = availableFloorCells.pop();
+                            content.x = x;
+                            content.y = y;
+                        } else {
+                            console.warn(`Not enough space to place all custom ${type}!`);
+                        }
+                    });
+                });
+            }
+
+            // Helper to shuffle an array (Fisher-Yates)
+            shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+            }
+
+            // Places entrances and exits
+            placeEntrancesExits(numEntrances, numExits) {
+                const availableFloorCells = [];
+                for (let y = 1; y < this.height - 1; y++) {
+                    for (let x = 1; x < this.width - 1; x++) {
+                        if (this.grid[y][x] === 1) {
+                            availableFloorCells.push({ x, y });
+                        }
+                    }
+                }
+
+                this.shuffleArray(availableFloorCells);
+
+                // Place entrances
+                for (let i = 0; i < numEntrances && availableFloorCells.length > 0; i++) {
+                    const { x, y } = availableFloorCells.pop();
+                    this.grid[y][x] = 2; // Mark as entrance
+                }
+
+                // Place exits
+                for (let i = 0; i < numExits && availableFloorCells.length > 0; i++) {
+                    const { x, y } = availableFloorCells.pop();
+                    this.grid[y][x] = 3; // Mark as exit
+                }
+            }
+
+            // Helper to shuffle an array (Fisher-Yates)
+            shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+            }
+
+            // Places features (pools, traps, secrets)
+            placeFeatures(features) {
+                const availableFloorCells = [];
+                for (let y = 1; y < this.height - 1; y++) {
+                    for (let x = 1; x < this.width - 1; x++) {
+                        if (this.grid[y][x] === 1) { // Only place on floor tiles
+                            availableFloorCells.push({ x, y });
+                        }
+                    }
+                }
+                this.shuffleArray(availableFloorCells);
+
+                // Place pools
+                if (features.pools) {
+                    const numPools = Math.floor(availableFloorCells.length * CONFIG.dungeon.featureChance / 2); // Half of general feature chance
+                    for (let i = 0; i < numPools && availableFloorCells.length > 0; i++) {
+                        const { x, y } = availableFloorCells.pop();
+                        this.grid[y][x] = 4; // Mark as pool
+                    }
+                }
+
+                // Place traps
+                if (features.traps) {
+                    const numTraps = Math.floor(availableFloorCells.length * CONFIG.dungeon.featureChance);
+                    for (let i = 0; i < numTraps && availableFloorCells.length > 0; i++) {
+                        const { x, y } = availableFloorCells.pop();
+                        this.grid[y][x] = 5; // Mark as trap
+                    }
+                }
+            }
+
+            // Places custom content (items, npcs, monsters)
+            placeCustomContent(customContents) {
+                const availableFloorCells = [];
+                for (let y = 1; y < this.height - 1; y++) {
+                    for (let x = 1; x < this.width - 1; x++) {
+                        // Only place on floor tiles not already occupied by entrances, exits, or other features
+                        // Grid value 1 signifies a regular floor tile.
+                        // Entrances (2), Exits (3), Pools (4), Traps (5), Secrets (6) should not be overwritten.
+                        if (this.grid[y][x] === 1) { 
+                            availableFloorCells.push({ x, y });
+                        }
+                    }
+                }
+                this.shuffleArray(availableFloorCells);
+
+                ['items', 'npcs', 'monsters'].forEach(type => {
+                    customContents[type].forEach(content => {
+                        if (availableFloorCells.length > 0) {
+                            const { x, y } = availableFloorCells.pop();
+                            content.x = x;
+                            content.y = y;
+                        } else {
+                            console.warn(`Not enough space to place all custom ${type}!`);
+                        }
+                    });
+                });
+            }
+
+            // --- Interaction Methods ---
+
+            onMouseDown(event) {
+                const rect = this.canvas.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+
+                const gridX = Math.floor(mouseX / this.cellSize);
+                const gridY = Math.floor(mouseY / this.cellSize);
+
+                this.isDragging = false;
+                this.selectedContent = null;
+
+                // Check if any custom content was clicked
+                ['items', 'npcs', 'monsters'].forEach(type => {
+                    this.customContents[type].forEach(content => {
+                        if (content.x === gridX && content.y === gridY) {
+                            this.selectedContent = content;
+                            this.isDragging = true;
+                            // Update the custom content list to highlight selected item if needed
+                            renderCustomContentList(type); // Re-render to update UI
+                        }
+                    });
+                });
+            }
+
+            onMouseMove(event) {
+                if (!this.isDragging || !this.selectedContent) return;
+
+                const rect = this.canvas.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+
+                const gridX = Math.floor(mouseX / this.cellSize);
+                const gridY = Math.floor(mouseY / this.cellSize);
+
+                // Update position if it's a valid floor tile and not occupied by other special elements
+                if (gridX >= 0 && gridX < this.width && gridY >= 0 && gridY < this.height && 
+                    this.grid[gridY][gridX] === 1) { // Only allow dropping on regular floor tiles
+                    this.selectedContent.x = gridX;
+                    this.selectedContent.y = gridY;
+                    this.draw(); // Redraw immediately for visual feedback
+                }
+            }
+
+            onMouseUp(event) {
+                this.isDragging = false;
+                if (this.selectedContent) {
+                    // Update the custom content list UI with new position
+                    ['items', 'npcs', 'monsters'].forEach(type => {
+                        renderCustomContentList(type);
+                    });
+                    this.selectedContent = null;
+                }
+            }
+
+            onKeyDown(event) {
+                if (event.key === 'Escape' && this.selectedContent) {
+                    this.selectedContent = null;
+                    this.isDragging = false;
+                    ['items', 'npcs', 'monsters'].forEach(type => {
+                        renderCustomContentList(type);
+                    });
+                    this.draw(); // Redraw to remove any highlight/selection
+                }
+            }
+
+
+            draw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Create a temporary grid to mark room cells
+                const roomGrid = Array(this.height).fill(null).map(() => Array(this.width).fill(false));
+                this.rooms.forEach(room => {
+                    for (let y = room.y; y < room.y + room.height; y++) {
+                        for (let x = room.x; x < room.x + room.width; x++) {
+                            roomGrid[y][x] = true;
+                        }
+                    }
+                });
+
+                for (let y = 0; y < this.height; y++) {
+                    for (let x = 0; x < this.width; x++) {
+                        const cx = x * this.cellSize;
+                        const cy = y * this.cellSize;
+                        let label = '';
+                        let fillColor = CONFIG.colors.wall;
+
+                        if (this.grid[y][x] === 0) {
+                            fillColor = CONFIG.colors.wall;
+                        } else if (this.grid[y][x] === 2) { // Entrance
+                            fillColor = CONFIG.colors.entrance;
+                            label = 'E';
+                        } else if (this.grid[y][x] === 3) { // Exit
+                            fillColor = CONFIG.colors.exit;
+                            label = 'X';
+                        } else if (this.grid[y][x] === 4) { // Pool
+                            fillColor = CONFIG.colors.pool;
+                            label = 'P';
+                        } else if (this.grid[y][x] === 5) { // Trap
+                            fillColor = CONFIG.colors.trap;
+                            label = 'T';
+                        } else if (this.grid[y][x] === 6 && !roomGrid[y][x]) { // Secret
+                            fillColor = CONFIG.colors.secret;
+                        }
+                         else if (roomGrid[y][x]) {
+                            fillColor = CONFIG.colors.room;
+                        } else if (this.grid[y][x] === 1) {
+                            fillColor = CONFIG.colors.corridor;
+                        }
+                        this.ctx.fillStyle = fillColor;
+                        this.ctx.fillRect(cx, cy, this.cellSize, this.cellSize);
+
+                        if (label) {
+                            this.drawLabel(label, cx + this.cellSize / 2, cy + this.cellSize / 2, CONFIG.colors.text_primary);
+                        }
+                    }
+                }
+
+                // Draw custom contents
+                this.drawCustomContents(this.customContents.items, CONFIG.colors.item);
+                this.drawCustomContents(this.customContents.npcs, CONFIG.colors.npc);
+                this.drawCustomContents(this.customContents.monsters, CONFIG.colors.monster);
+            }
+
+            drawLabel(text, x, y, color) {
+                this.ctx.fillStyle = color;
+                this.ctx.font = `${this.cellSize / 2}px Arial`;
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(text, x, y);
+            }
+
+            drawCustomContents(contents, color) {
+                contents.forEach(item => {
+                    if (item.x !== null && item.y !== null) {
+                        const cx = (item.x + 0.5) * this.cellSize;
+                        const cy = (item.y + 0.5) * this.cellSize;
+                        const size = this.cellSize / 2.5;
+
+                        this.ctx.fillStyle = color;
+                        this.ctx.beginPath();
+                        this.ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
+                        this.ctx.fill();
+
+                        // Draw text label below the circle
+                        this.drawLabel(item.name, cx, cy + this.cellSize / 2 - 2, CONFIG.colors.text_primary);
+                    }
+                });
+            }
+
+
+            exportSVG() {
+                const w = this.width * this.cellSize;
+                const h = this.height * this.cellSize;
+                const cs = this.cellSize;
+
+                let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+                svg += `<rect width="${w}" height="${h}" fill="${CONFIG.colors.background}"/>`; // Use background for full canvas
+
+                // Create a temporary grid to mark room cells
+                const roomGrid = Array(this.height).fill(null).map(() => Array(this.width).fill(false));
+                this.rooms.forEach(room => {
+                    for (let y = room.y; y < room.y + room.height; y++) {
+                        for (let x = room.x; x < room.x + room.width; x++) {
+                            roomGrid[y][x] = true;
+                        }
+                    }
+                });
+
+                for (let y = 0; y < this.height; y++) {
+                    for (let x = 0; x < this.width; x++) {
+                        const cx = x * cs;
+                        const cy = y * cs;
+                        let label = '';
+                        let fillColor = CONFIG.colors.wall;
+
+                        if (this.grid[y][x] === 0) {
+                            fillColor = CONFIG.colors.wall;
+                        } else if (this.grid[y][x] === 2) { // Entrance
+                            fillColor = CONFIG.colors.entrance;
+                            label = 'E';
+                        } else if (this.grid[y][x] === 3) { // Exit
+                            fillColor = CONFIG.colors.exit;
+                            label = 'X';
+                        } else if (this.grid[y][x] === 4) { // Pool
+                            fillColor = CONFIG.colors.pool;
+                            label = 'P';
+                        } else if (this.grid[y][x] === 5) { // Trap
+                            fillColor = CONFIG.colors.trap;
+                            label = 'T';
+                        } else if (this.grid[y][x] === 6 && !roomGrid[y][x]) { // Secret
+                            fillColor = CONFIG.colors.secret;
+                        } else if (roomGrid[y][x]) {
+                            fillColor = CONFIG.colors.room;
+                        } else if (this.grid[y][x] === 1) { // Regular floor/corridor
+                            fillColor = CONFIG.colors.corridor;
+                        }
+                        svg += `<rect x="${cx}" y="${cy}" width="${cs}" height="${cs}" fill="${fillColor}"/>`;
+                        if (label) {
+                            svg += `<text x="${cx + cs / 2}" y="${cy + cs / 2}" font-family="Arial" font-size="${cs / 2}" fill="${CONFIG.colors.text_primary}" text-anchor="middle" dominant-baseline="middle">${label}</text>`;
+                        }
+                    }
+                }
+
+                // Export custom contents
+                ['items', 'npcs', 'monsters'].forEach(type => {
+                    this.customContents[type].forEach(item => {
+                        if (item.x !== null && item.y !== null) {
+                            const cx = (item.x + 0.5) * cs;
+                            const cy = (item.y + 0.5) * cs;
+                            const size = cs / 2.5;
+
+                            svg += `<circle cx="${cx}" cy="${cy}" r="${size / 2}" fill="${CONFIG.colors[type.slice(0, -1)]}"/>`;
+                            svg += `<text x="${cx}" y="${cy + cs / 2 - 2}" font-family="Arial" font-size="${cs / 2}" fill="${CONFIG.colors.text_primary}" text-anchor="middle" dominant-baseline="middle">${item.name}</text>`;
+                        }
+                    });
+                });
+
+                svg += '</svg>';
+                return svg;
+            }        }
+
+        // ============================================
+        // DM TOOLS
+        // ============================================
+        class DmTools {
+            constructor() {
+                this.panels = ["dicePanel", "notesPanel", "initiativePanel", "calcPanel"];
+                this.editing = false;
+                this.editingInit = false;
+                this.currentPanelIndex = 0;
+                this.lastPanelIndex = 0;
+                this.keydownListener = this.onKeyDown.bind(this);
+            }
+
+            init() {
+                // Attach event listeners for buttons that are part of the DM Tools
+                // These event listeners should be attached to the buttons within the DM tab
+                // when the DM tab is activated. For now, we will add a placeholder and refine later.
+                // document.getElementById("dungeon-add-item-btn").addEventListener("click", () => this.addCalc()); // Example placeholder
+            }
+
+            updateActivePanel() {
+                this.panels.forEach((id, i) => {
+                    const panelElement = document.getElementById(id);
+                    if (panelElement) {
+                        panelElement.classList.toggle("active", i === this.currentPanelIndex);
+                    }
+                });
+            }
+
+            onKeyDown(e) {
+                // Check if the DM tab is currently active
+                const dmTabContent = document.getElementById('dm-content');
+                if (!dmTabContent || !dmTabContent.classList.contains('active')) {
+                    return; // Only process key events if DM tab is active
+                }
+
+                let panel = this.panels[this.currentPanelIndex];
+
+                // Calculator
+                if (panel === "calcPanel") {
+                    if (e.key === "a") {
+                        e.preventDefault();
+                        this.addCalc();
+                    } else if (e.key === "d") {
+                        this.deleteSelected("calc");
+                    } else if (e.key === "j") {
+                        e.preventDefault();
+                        this.selectNext("calc");
+                    } else if (e.key === "k") {
+                        e.preventDefault();
+                        this.selectPrev("calc");
+                    } else if (e.key === "Enter") {
+                        e.preventDefault();
+                        let selected = document.querySelector("#calcList .selected input");
+                        if (selected) {
+                            try {
+                                selected.value = eval(selected.value);
+                            } catch (error) {
+                                selected.value = "Error";
+                            }
+                        }
+                    }
+                }
+
+                // Notes
+                if (panel === "notesPanel") {
+                    let textarea = document.getElementById("notesArea");
+                    if ((e.key === "Enter" || e.key === "i") && document.activeElement !== textarea) {
+                        textarea.focus();
+                        this.editing = true;
+                        e.preventDefault();
+                    } else if (e.key === "Escape") {
+                        this.editing = false;
+                        textarea.blur();
+                    }
+                }
+
+                if (this.editing) {
+                    return;
+                }
+
+                // Initiative
+                if (panel === "initiativePanel") {
+                    this.updateActivePanel();
+                    let selected = document.querySelector("#initiativeList .selected");
+                    if (e.key === "a" && (!selected || selected.dataset.mode === "view")) {
+                        e.preventDefault();
+                        this.addInitiative();
+                    } else if (selected && selected.dataset.mode === "view") {
+                        if (e.key === "d") {
+                            selected.remove();
+                        } else if (e.key === "j") {
+                            this.selectNext("initiative");
+                        } else if (e.key === "k") {
+                            this.selectPrev("initiative");
+                        } else if (e.key === "J") {
+                            this.moveDown("initiative");
+                        } else if (e.key === "K") {
+                            this.moveUp("initiative");
+                        } else if (e.key === "Enter") {
+                            this.editingInit = true;
+                            this.makeEditable(selected);
+                        }
+                    } else if (selected && selected.dataset.mode === "edit" && e.key === "Enter") {
+                        this.editingInit = false;
+                        this.makeReadOnly(selected);
+                    }
+
+                    if (!selected) {
+                        this.selectNext("initiative");
+                    }
+                }
+
+                if (this.editingInit) {
+                    return;
+                }
+
+                // Dice roller
+                if (panel === "dicePanel") {
+                    if (e.key === "Enter" && document.activeElement === document.getElementById("diceInput")) {
+                        let input = document.getElementById("diceInput");
+                        this.rollDice(input.value);
+                        input.value = "";
+                        e.preventDefault();                   
+                    } else {
+                        // Focus on diceInput only if another element isn't active
+                        if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                            document.getElementById("diceInput").focus();
+                        }
+                    }
+
+                    if (!/^[0-9hlxd]$/.test(e.key)) {
+                        if (
+                            e.key !== "Backspace" &&
+                            e.key !== "Delete"  &&
+                            e.key !== "Tab" &&
+                            e.key !== "Escape" &&
+                            e.key !== "Enter" &&
+                            !e.key.startsWith("Arrow")
+                        ) {
+                            // Only prevent default if we're not allowing these common keys
+                            // e.preventDefault();
+                            // return;
+                        }
+                    }
+                }
+
+                // Navigation
+                if (e.key === "h") {
+                    this.lastPanelIndex = this.currentPanelIndex;
+                    this.currentPanelIndex = (this.currentPanelIndex - 1 + this.panels.length) % this.panels.length;
+                    this.updateActivePanel();
+                    e.preventDefault();
+
+                    if (document.activeElement) {
+                        document.activeElement.blur();
+                    }
+                    return;
+                }
+                if (e.key === "l") {
+                    this.lastPanelIndex = this.currentPanelIndex;
+                    this.currentPanelIndex = (this.currentPanelIndex + 1) % this.panels.length;
+                    this.updateActivePanel();
+                    e.preventDefault();
+
+                    if (document.activeElement) {
+                        document.activeElement.blur();
+                    }
+                    return;
+                }
+            }
+
+            rollDice(expression) {
+                let resultsDiv = document.getElementById("diceResults");
+                let match = expression.match(/^(\d+x)?(\d+)d(\d+)$/);
+                if (!match) {
+                    resultsDiv.innerHTML = "Invalid roll";
+                    return;
+                }
+                let times = match[1] ? parseInt(match[1]) : 1;
+                let rolls = parseInt(match[2]);
+                let sides = parseInt(match[3]);
+                let allResults = [];
+                for (let t = 0; t < times; t++) {
+                    let total = 0;
+                    let parts = [];
+                    for (let i = 0; i < rolls; i++) {
+                        let roll = Math.floor(Math.random() * sides) + 1;
+                        parts.push(roll);
+                        total += roll;
+                    }
+                    allResults.push(`${parts.join("+")} = ${total}`);
+                }
+                resultsDiv.innerHTML = allResults.join("<br>");
+            }
+
+            addCalc() {
+                let list = document.getElementById("calcList");
+                let div = document.createElement("div");
+                div.className = "calc";
+                let input = document.createElement("input");
+                div.appendChild(input);
+                list.appendChild(div);
+                this.selectElement(div, "calc");
+                input.focus();
+            }
+
+            deleteSelected(type) {
+                let selected = document.querySelector(`#${type}List .selected`);
+                if (selected) selected.remove();
+            }
+
+            addInitiative() {
+                let list = document.getElementById("initiativeList");
+                let div = document.createElement("div");
+                div.className = "initiative";
+                div.dataset.mode = "edit";
+                let input = document.createElement("input");
+                div.appendChild(input);
+                list.appendChild(div);
+                this.selectElement(div, "initiative");
+                this.editingInit = true;
+                input.focus();
+            }
+
+            makeEditable(div) {
+                let text = div.querySelector("span").innerText;
+                div.innerHTML = "";
+                let input = document.createElement("input");
+                input.value = text;
+                div.appendChild(input);
+                div.dataset.mode = "edit";
+                input.focus();
+            }
+
+            makeReadOnly(div) {
+                let input = div.querySelector("input");
+                let span = document.createElement("span");
+                span.innerText = input.value;
+                div.innerHTML = "";
+                div.appendChild(span);
+                div.dataset.mode = "view";
+                this.selectElement(div, "initiative");
+            }
+
+            selectElement(el, type) {
+                document.querySelectorAll(`#${type}List div`).forEach(d => d.classList.remove("selected"));
+                if (el) {
+                    el.classList.add("selected");
+                }
+            }
+
+            selectNext(type) {
+                let selected = document.querySelector(`#${type}List .selected`);
+                if (selected && selected.nextElementSibling) {
+                    this.selectElement(selected.nextElementSibling, type);
+                } else {
+                    if (type === "initiative") {
+                        selected = document.querySelector("#" + type + "List ." + type);
+                    }
+                    this.selectElement(selected, type);
+                }
+
+                if (type === "calc") {
+                    let newSelected = document.querySelector("#" + type + "List .selected");
+                    if (newSelected) {
+                        newSelected.firstElementChild.focus();
+                    }
+                }
+            }
+
+            selectPrev(type) {
+                let selected = document.querySelector(`#${type}List .selected`);
+                if (selected && selected.previousElementSibling) {
+                    this.selectElement(selected.previousElementSibling, type);
+                } else {
+                    selected = document.querySelector("#" + type + "List ." + type);
+                    this.selectElement(selected, type);
+                }
+
+                if (type === "calc") {
+                    let newSelected = document.querySelector("#" + type + "List .selected");
+                    if (newSelected) {
+                        newSelected.firstElementChild.focus();
+                    }
+                }
+            }
+
+            moveDown(type) {
+                let selected = document.querySelector(`#${type}List .selected`);
+                if (selected && selected.nextElementSibling) {
+                    selected.parentNode.insertBefore(selected.nextElementSibling, selected);
+                }
+            }
+
+            moveUp(type) {
+                let selected = document.querySelector(`#${type}List .selected`);
+                if (selected && selected.previousElementSibling) {
+                    selected.parentNode.insertBefore(selected, selected.previousElementSibling);
+                }
+            }
+
+            enableKeybindings() {
+                document.addEventListener("keydown", this.keydownListener);
+                this.updateActivePanel(); // Set initial active panel
+            }
+
+            disableKeybindings() {
+                document.removeEventListener("keydown", this.keydownListener);
+            }
+        }
+
+        // ============================================
         // MONSTER GENERATOR
         // ============================================
 
@@ -2002,14 +3245,117 @@ const MONSTERS = {
             populateMonsterList(MONSTERS);
         }
 
+        // Helper functions for managing custom content lists
+        let dungeonCustomContents = {
+            items: [],
+            npcs: [],
+            monsters: []
+        };
+
+        function addCustomContent(type) {
+            const inputId = `dungeon-add-${type.slice(0, -1)}`; // e.g., 'dungeon-add-item'
+            const inputElement = document.getElementById(inputId);
+            const name = inputElement.value.trim();
+
+            if (name) {
+                dungeonCustomContents[type].push({ name: name, x: null, y: null });
+                inputElement.value = '';
+                renderCustomContentList(type);
+            }
+        }
+
+        function removeCustomContent(type, index) {
+            dungeonCustomContents[type].splice(index, 1);
+            renderCustomContentList(type);
+        }
+
+        function renameCustomContent(type, index, newName) {
+            if (newName) {
+                dungeonCustomContents[type][index].name = newName;
+                renderCustomContentList(type);
+            }
+        }
+
+        function renderCustomContentList(type) {
+            const listElement = document.getElementById(`dungeon-${type}-list`);
+            listElement.innerHTML = '';
+
+            dungeonCustomContents[type].forEach((item, index) => {
+                const li = document.createElement('li');
+                li.className = `${type.slice(0, -1)}-list-item`; // e.g., 'item-list-item'
+                
+                const span = document.createElement('span');
+                span.textContent = item.name;
+                span.title = `Position: ${item.x !== null ? `${item.x}, ${item.y}` : 'Unplaced'}`;
+                span.addEventListener('dblclick', () => {
+                    const newName = prompt(`Rename ${item.name}:`, item.name);
+                    renameCustomContent(type, index, newName);
+                });
+
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-btn';
+                removeBtn.textContent = 'x';
+                removeBtn.addEventListener('click', () => {
+                    removeCustomContent(type, index);
+                });
+
+                li.appendChild(span);
+                li.appendChild(removeBtn);
+                listElement.appendChild(li);
+            });
+        }
+
+
         // ============================================
         // INITIALIZATION
         // ============================================
         let mazeGenerator;
+        let dungeonGenerator; // Declare dungeonGenerator here
+        let dmTools; // Declare dmTools here
+
+        // Function to reset dungeon generator to default settings
+        function resetDungeon() {
+            // Reset input fields to their default values
+            document.getElementById('dungeon-width').value = CONFIG.dungeon.defaultWidth;
+            document.getElementById('dungeon-height').value = CONFIG.dungeon.defaultHeight;
+            document.getElementById('dungeon-entrances').value = 1;
+            document.getElementById('dungeon-exits').value = 1;
+            document.getElementById('dungeon-rooms').value = 10;
+            document.getElementById('dungeon-room-vs-hall').value = CONFIG.dungeon.roomVsHallDefault;
+            document.getElementById('dungeon-room-vs-hall-val').textContent = CONFIG.dungeon.roomVsHallDefault + '% Rooms';
+
+            // Reset feature checkboxes
+            document.getElementById('include-pools').checked = false;
+            document.getElementById('include-traps').checked = false;
+            document.getElementById('include-secrets').checked = false;
+
+            // Clear custom content lists
+            dungeonCustomContents.items = [];
+            dungeonCustomContents.npcs = [];
+            dungeonCustomContents.monsters = [];
+            renderCustomContentList('items');
+            renderCustomContentList('npcs');
+            renderCustomContentList('monsters');
+
+            // Generate a new dungeon with default settings
+            dungeonGenerator.generate(
+                CONFIG.dungeon.defaultWidth,
+                CONFIG.dungeon.defaultHeight,
+                1, // Default entrances
+                1, // Default exits
+                10, // Default rooms
+                CONFIG.dungeon.roomVsHallDefault, // Default room vs hall ratio
+                { pools: false, traps: false, secrets: false }, // Default features
+                dungeonCustomContents
+            );
+        }
 
         function init() {
             initTabs();
             mazeGenerator = new MazeGenerator('maze-canvas');
+            dungeonGenerator = new DungeonGenerator('dungeon-canvas'); // Initialize dungeonGenerator
+            dmTools = new DmTools(); // Initialize dmTools
+            dmTools.init(); // Initialize DM tool specific event listeners
 
             document.getElementById('monster-chance').addEventListener('input', (e) => {
                 document.getElementById('monster-chance-val').textContent = e.target.value + '%';
@@ -2019,6 +3365,52 @@ const MONSTERS = {
             });
             document.getElementById('npc-chance').addEventListener('input', (e) => {
                 document.getElementById('npc-chance-val').textContent = e.target.value + '%';
+            });
+
+            // Dungeon related event listeners
+            document.getElementById('dungeon-room-vs-hall').addEventListener('input', (e) => {
+                document.getElementById('dungeon-room-vs-hall-val').textContent = e.target.value + '% Rooms';
+            });
+
+            document.getElementById('dungeon-add-item-btn').addEventListener('click', () => addCustomContent('items'));
+            document.getElementById('dungeon-add-npc-btn').addEventListener('click', () => addCustomContent('npcs'));
+            document.getElementById('dungeon-add-monster-btn').addEventListener('click', () => addCustomContent('monsters'));
+
+            // Add event listener for the new reset button
+            document.getElementById('reset-dungeon').addEventListener('click', resetDungeon);
+
+            renderCustomContentList('items');
+            renderCustomContentList('npcs');
+            renderCustomContentList('monsters');
+
+            document.getElementById('generate-dungeon').addEventListener('click', () => {
+                const width = parseInt(document.getElementById('dungeon-width').value);
+                const height = parseInt(document.getElementById('dungeon-height').value);
+                const numEntrances = parseInt(document.getElementById('dungeon-entrances').value);
+                const numExits = parseInt(document.getElementById('dungeon-exits').value);
+                const numRooms = parseInt(document.getElementById('dungeon-rooms').value);
+                const roomVsHallRatio = parseInt(document.getElementById('dungeon-room-vs-hall').value);
+                const features = {
+                    pools: document.getElementById('include-pools').checked,
+                    traps: document.getElementById('include-traps').checked,
+                    secrets: document.getElementById('include-secrets').checked
+                };
+
+                const w = Math.max(CONFIG.dungeon.minSize, Math.min(CONFIG.dungeon.maxSize, width));
+                const h = Math.max(CONFIG.dungeon.minSize, Math.min(CONFIG.dungeon.maxSize, height));
+
+                dungeonGenerator.generate(w, h, numEntrances, numExits, numRooms, roomVsHallRatio, features, dungeonCustomContents);
+            });
+
+            document.getElementById('save-dungeon').addEventListener('click', () => {
+                const svg = dungeonGenerator.exportSVG();
+                const blob = new Blob([svg], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'dungeon.svg';
+                a.click();
+                URL.revokeObjectURL(url);
             });
 
             const generateBtn = document.getElementById('generate-maze');
@@ -2265,7 +3657,7 @@ const MONSTERS = {
                 CONFIG.maze.defaultHeight,
                 'recursive-backtracker',
                 'moderate',
-                { monsters: { enabled: true, chance: 15 }, items: { enabled: true, chance: 10 }, npcs: { enabled: false, chance: 5 } }
+                { monsters: { enabled: true, chance: 2 }, items: { enabled: true, chance: 2 }, npcs: { enabled: false, chance: 5 } }
             );
         }
 
