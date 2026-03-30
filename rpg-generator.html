@@ -3463,7 +3463,12 @@ const MONSTERS = {
                 populateMonsterList(filteredMonsters);
             });
 
-                        document.getElementById('export-monster-html').addEventListener('click', () => {
+            document.getElementById('export-monster-html').addEventListener('click', () => {
+                if (document.getElementById('monster-name').value === "Select a monster") {
+                    alert('Please select a monster to export');
+                    return;
+                }
+
                 const name = document.getElementById('monster-name').value;
                 const size = document.getElementById('monster-size').value;
                 const type = document.getElementById('monster-type').value;
