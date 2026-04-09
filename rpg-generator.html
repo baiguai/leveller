@@ -412,7 +412,7 @@
         }
 
         .monster-list {
-            max-height: 500px;
+            max-height: 700px;
             overflow-y: auto;
             border: 1px solid var(--border);
             border-radius: 4px;
@@ -637,6 +637,11 @@
         .player-list-panel {
             width: 250px;
             flex-shrink: 0;
+        }
+
+        #player-list {
+            max-height: 700px;
+            overflow-y: auto;
         }
 
         .player-stats-panel {
@@ -1236,12 +1241,12 @@
                             </div>
 
                             <div class="attr-group" style="margin-top: 15px;">
-                                <h4>Equipment</h4>
+                                <h4>Equipment <button class="btn btn-secondary" id="refresh-equipment" style="padding: 2px 8px; font-size: 0.7rem;">Refresh</button></h4>
                                 <textarea id="player-equipment" style="width: 100%; height: 80px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); padding: 8px; resize: vertical;" placeholder="Starter gear will be auto-generated..."></textarea>
                             </div>
 
                             <div class="attr-group" style="margin-top: 15px;">
-                                <h4>Features & Traits</h4>
+                                <h4>Features & Traits <button class="btn btn-secondary" id="refresh-features" style="padding: 2px 8px; font-size: 0.7rem;">Refresh</button></h4>
                                 <textarea id="player-features" style="width: 100%; height: 100px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); padding: 8px; resize: vertical;" placeholder="Class features and racial traits will appear here..."></textarea>
                             </div>
                         </div>
@@ -2320,8 +2325,11 @@ const MONSTERS = {
         // To add a saved character: Copy the character object from the save dialog and paste it here.
         // Each character should be on its own line for easy editing/removal.
         // Search for: "SAVED_CHARACTERS_DATA" to find this section quickly.
+        //
+        // Be sure each entry is separated by a comma!
         // ══════════════════════════════════════════════════════════════════════════════════════
         const SAVED_CHARACTERS_DATA = [
+
         ];
 
         // Convert saved data to runtime array
@@ -2454,42 +2462,50 @@ const MONSTERS = {
             const level = parseInt(document.getElementById('player-level').value) || 1;
             const classData = PLAYER_CLASSES[charClass];
             const raceData = PLAYER_RACES[race];
+            const featuresField = document.getElementById('player-features');
 
-            let features = [];
+            // Only auto-populate if field is empty (preserve manual edits)
+            if (featuresField.value.trim() === '') {
+                let features = [];
 
-            if (raceData && raceData.features) {
-                features.push(...raceData.features);
-            }
+                if (raceData && raceData.features) {
+                    features.push(...raceData.features);
+                }
 
-            if (classData && classData.features) {
-                for (let l = 1; l <= level; l++) {
-                    if (classData.features[l]) {
-                        features.push(`Level ${l}: ${classData.features[l].name} - ${classData.features[l].desc}`);
+                if (classData && classData.features) {
+                    for (let l = 1; l <= level; l++) {
+                        if (classData.features[l]) {
+                            features.push(`Level ${l}: ${classData.features[l].name} - ${classData.features[l].desc}`);
+                        }
                     }
                 }
-            }
 
-            document.getElementById('player-features').value = features.join('\n\n');
+                featuresField.value = features.join('\n\n');
+            }
         }
 
         function updateEquipment() {
             const charClass = document.getElementById('player-class').value;
             const background = document.getElementById('player-background').value;
+            const equipmentField = document.getElementById('player-equipment');
 
-            let equipment = [];
+            // Only auto-populate if field is empty (preserve manual edits)
+            if (equipmentField.value.trim() === '') {
+                let equipment = [];
 
-            if (STARTER_EQUIPMENT[charClass]) {
-                equipment.push(...STARTER_EQUIPMENT[charClass]);
+                if (STARTER_EQUIPMENT[charClass]) {
+                    equipment.push(...STARTER_EQUIPMENT[charClass]);
+                }
+
+                if (BACKGROUND_EQUIPMENT[background]) {
+                    equipment.push(...BACKGROUND_EQUIPMENT[background]);
+                }
+
+                equipment.push('15 GP'); // Starting gold
+                equipment.push('Common Clothes');
+
+                equipmentField.value = equipment.join('\n');
             }
-
-            if (BACKGROUND_EQUIPMENT[background]) {
-                equipment.push(...BACKGROUND_EQUIPMENT[background]);
-            }
-
-            equipment.push('15 GP'); // Starting gold
-            equipment.push('Common Clothes');
-
-            document.getElementById('player-equipment').value = equipment.join('\n');
         }
 
         function generateRandomCharacter() {
@@ -2543,6 +2559,10 @@ const MONSTERS = {
             classData.savingThrows.forEach(save => {
                 document.getElementById('player-save-' + save.toLowerCase()).checked = true;
             });
+
+            // Clear these fields so they get auto-populated fresh
+            document.getElementById('player-equipment').value = '';
+            document.getElementById('player-features').value = '';
 
             updatePlayerStats();
         }
@@ -4486,6 +4506,16 @@ const MONSTERS = {
             document.getElementById('save-player-char').addEventListener('click', savePlayerCharacter);
 
             document.getElementById('export-player-html').addEventListener('click', exportPlayerHTML);
+
+            document.getElementById('refresh-equipment').addEventListener('click', () => {
+                document.getElementById('player-equipment').value = '';
+                updateEquipment();
+            });
+
+            document.getElementById('refresh-features').addEventListener('click', () => {
+                document.getElementById('player-features').value = '';
+                updateFeaturesAndTraits();
+            });
 
             updatePlayerStats();
             renderPlayerList();
