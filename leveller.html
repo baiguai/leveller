@@ -4718,6 +4718,15 @@ const MONSTERS = {
             });
 
             document.getElementById('save-monster-btn').addEventListener('click', saveMonster);
+            
+            ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(stat => {
+                document.getElementById('monster-' + stat).addEventListener('input', () => {
+                    const score = parseInt(document.getElementById('monster-' + stat).value) || 10;
+                    const mod = getAbilityMod(score);
+                    document.getElementById('monster-' + stat + '-mod').textContent = formatMod(mod);
+                });
+            });
+            
             renderSavedMonsterList();
 
             document.getElementById('saved-monster-search').addEventListener('input', (e) => {
