@@ -2366,7 +2366,7 @@ const MONSTERS = {
             return Math.max(total, level * (1 + conMod));
         }
 
-        function updatePlayerStats() {
+        function updatePlayerStats(savedSkills = null) {
             const level = parseInt(document.getElementById('player-level').value) || 1;
             const profBonus = getProficiencyBonus(level);
             document.getElementById('player-prof').value = '+' + profBonus;
@@ -2388,7 +2388,7 @@ const MONSTERS = {
             }
 
             updateSavingThrows();
-            updateSkillList();
+            updateSkillList(savedSkills);
             updateFeaturesAndTraits();
             updateEquipment();
         }
@@ -2415,7 +2415,6 @@ const MONSTERS = {
 
             const charClass = document.getElementById('player-class').value;
             const classData = PLAYER_CLASSES[charClass];
-            const numSkills = charClass === 'Rogue' || charClass === 'Bard' ? 3 : (charClass === 'Ranger' || charClass === 'Paladin' ? 2 : 2);
 
             Object.keys(SKILLS).forEach(skillName => {
                 const skillData = SKILLS[skillName];
@@ -2425,10 +2424,20 @@ const MONSTERS = {
                 const skillId = skillName.replace(/\s+/g, '-');
                 const isClassSkill = classData && classData.skills.includes(skillName);
 
+                // Check saved skills with multiple format variations
+                let savedValue = null;
+                if (savedSkills) {
+                    savedValue = savedSkills[skillId] ?? 
+                                 savedSkills[skillId.replace(/-/g, '')] ?? 
+                                 savedSkills[skillName] ??
+                                 savedSkills[skillId.replace(/-/g, ' ')] ?? 
+                                 savedSkills[skillName.replace(/ /g, '-')];
+                }
+
                 // If loading saved skills, use those; otherwise use class defaults
                 let isProficient = isClassSkill;
-                if (savedSkills && savedSkills[skillId] !== undefined) {
-                    isProficient = savedSkills[skillId];
+                if (savedValue !== null) {
+                    isProficient = savedValue;
                 }
 
                 const level = parseInt(document.getElementById('player-level').value) || 1;
@@ -2597,7 +2606,7 @@ const MONSTERS = {
                 cha: document.getElementById('player-save-cha').checked
             };
 
-            // Collect skill selections
+            // Collect skill selections (use ID as-is since it matches the checkbox IDs)
             const skills = {};
             document.querySelectorAll('#player-skills-list input[type="checkbox"]').forEach(cb => {
                 skills[cb.id.replace('skill-', '')] = cb.checked;
@@ -2718,10 +2727,8 @@ const MONSTERS = {
                 document.getElementById('player-features').value = char.features;
             }
 
-            // Build skill list and restore skill selections
-            updateSkillList(char.skills || null);
-
-            updatePlayerStats();
+            // Update all stats with saved skills
+            updatePlayerStats(char.skills || null);
         }
 
         function renderPlayerList() {
