@@ -2409,7 +2409,7 @@ const MONSTERS = {
             });
         }
 
-        function updateSkillList() {
+        function updateSkillList(savedSkills = null) {
             const container = document.getElementById('player-skills-list');
             container.innerHTML = '';
 
@@ -2422,7 +2422,15 @@ const MONSTERS = {
                 const ability = skillData.ability.toLowerCase();
                 const abilityScore = parseInt(document.getElementById('player-' + ability).value) || 10;
                 const mod = getAbilityMod(abilityScore);
-                const isProficient = classData && classData.skills.includes(skillName);
+                const skillId = skillName.replace(/\s+/g, '-');
+                const isClassSkill = classData && classData.skills.includes(skillName);
+
+                // If loading saved skills, use those; otherwise use class defaults
+                let isProficient = isClassSkill;
+                if (savedSkills && savedSkills[skillId] !== undefined) {
+                    isProficient = savedSkills[skillId];
+                }
+
                 const level = parseInt(document.getElementById('player-level').value) || 1;
                 const profBonus = getProficiencyBonus(level);
                 const totalMod = mod + (isProficient ? profBonus : 0);
@@ -2430,7 +2438,7 @@ const MONSTERS = {
                 const div = document.createElement('div');
                 div.className = 'skill-checkbox';
                 div.innerHTML = `
-                    <input type="checkbox" id="skill-${skillName.replace(/\s+/g, '-')}" ${isProficient ? 'checked' : ''}>
+                    <input type="checkbox" id="skill-${skillId}" ${isProficient ? 'checked' : ''}>
                     <span>${skillName} (${skillData.ability})</span>
                     <span class="skill-mod">${formatMod(totalMod)}</span>
                 `;
@@ -2579,6 +2587,22 @@ const MONSTERS = {
             const race = document.getElementById('player-race').value;
             const level = document.getElementById('player-level').value;
 
+            // Collect saving throw selections
+            const savingThrows = {
+                str: document.getElementById('player-save-str').checked,
+                dex: document.getElementById('player-save-dex').checked,
+                con: document.getElementById('player-save-con').checked,
+                int: document.getElementById('player-save-int').checked,
+                wis: document.getElementById('player-save-wis').checked,
+                cha: document.getElementById('player-save-cha').checked
+            };
+
+            // Collect skill selections
+            const skills = {};
+            document.querySelectorAll('#player-skills-list input[type="checkbox"]').forEach(cb => {
+                skills[cb.id.replace('skill-', '')] = cb.checked;
+            });
+
             const character = {
                 name: name,
                 charClass: charClass,
@@ -2595,6 +2619,9 @@ const MONSTERS = {
                 int: document.getElementById('player-int').value,
                 wis: document.getElementById('player-wis').value,
                 cha: document.getElementById('player-cha').value,
+                savingThrows: savingThrows,
+                skills: skills,
+                acBonus: document.getElementById('player-ac-bonus').value,
                 equipment: document.getElementById('player-equipment').value,
                 features: document.getElementById('player-features').value
             };
@@ -2669,8 +2696,30 @@ const MONSTERS = {
             document.getElementById('player-int').value = char.int;
             document.getElementById('player-wis').value = char.wis;
             document.getElementById('player-cha').value = char.cha;
-            document.getElementById('player-equipment').value = char.equipment;
-            document.getElementById('player-features').value = char.features;
+
+            // Restore saving throws
+            if (char.savingThrows) {
+                ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(save => {
+                    const cb = document.getElementById('player-save-' + save);
+                    if (cb) cb.checked = char.savingThrows[save];
+                });
+            }
+
+            // Restore AC bonus
+            if (char.acBonus) {
+                document.getElementById('player-ac-bonus').value = char.acBonus;
+            }
+
+            // Restore equipment and features (don't clear them first)
+            if (char.equipment !== undefined) {
+                document.getElementById('player-equipment').value = char.equipment;
+            }
+            if (char.features !== undefined) {
+                document.getElementById('player-features').value = char.features;
+            }
+
+            // Build skill list and restore skill selections
+            updateSkillList(char.skills || null);
 
             updatePlayerStats();
         }
@@ -2704,6 +2753,7 @@ const MONSTERS = {
             const speed = document.getElementById('player-speed').value;
             const prof = document.getElementById('player-prof').value;
             const hitDice = document.getElementById('player-hit-dice').value;
+            const acBonus = document.getElementById('player-ac-bonus').value;
             const str = document.getElementById('player-str').value;
             const dex = document.getElementById('player-dex').value;
             const con = document.getElementById('player-con').value;
@@ -2712,6 +2762,22 @@ const MONSTERS = {
             const cha = document.getElementById('player-cha').value;
             const equipment = document.getElementById('player-equipment').value;
             const features = document.getElementById('player-features').value;
+
+            // Collect saving throws
+            const saves = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+            const savingThrows = saves
+                .filter(s => document.getElementById('player-save-' + s).checked)
+                .map(s => s.toUpperCase())
+                .join(', ');
+
+            // Collect skills
+            const skillList = [];
+            document.querySelectorAll('#player-skills-list input[type="checkbox"]').forEach(cb => {
+                if (cb.checked) {
+                    const skillName = cb.id.replace('skill-', '').replace(/-/g, ' ');
+                    skillList.push(skillName);
+                }
+            });
 
             const styles = `
                 :root {
@@ -2757,9 +2823,13 @@ const MONSTERS = {
             <div class="info-item"><strong>Hit Points</strong> ${hp}</div>
             <div class="info-item"><strong>Speed</strong> ${speed}</div>
         </div>
-        <div class="info-row">
+            <div class="info-row">
             <div class="info-item"><strong>Proficiency Bonus</strong> ${prof}</div>
             <div class="info-item"><strong>Hit Dice</strong> ${hitDice}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-item"><strong>AC Bonus</strong> ${acBonus}</div>
+            <div class="info-item"><strong>Saving Throws</strong> ${savingThrows}</div>
         </div>
         
         <hr>
@@ -2774,6 +2844,11 @@ const MONSTERS = {
         </div>
         
         <hr>
+        
+        <div class="section">
+            <h2>Skills</h2>
+            <p>${skillList.length > 0 ? skillList.join(', ') : 'None'}</p>
+        </div>
         
         <div class="section">
             <h2>Equipment</h2>
