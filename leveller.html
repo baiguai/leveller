@@ -412,7 +412,7 @@
         }
 
         .monster-list {
-            max-height: 500px;
+            max-height: 700px;
             overflow-y: auto;
             border: 1px solid var(--border);
             border-radius: 4px;
@@ -626,6 +626,83 @@
 
         .remove-btn:hover {
             color: var(--accent);
+        }
+
+        .player-panel {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .player-list-panel {
+            width: 250px;
+            flex-shrink: 0;
+        }
+
+        #player-list {
+            max-height: 700px;
+            overflow-y: auto;
+        }
+
+        .player-stats-panel {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .skill-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 0;
+            font-size: 0.85rem;
+        }
+
+        .skill-checkbox input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            accent-color: var(--accent);
+        }
+
+        .skill-checkbox .skill-mod {
+            margin-left: auto;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .player-list-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+
+        .player-list-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .player-list-item.selected {
+            background: var(--bg-tertiary);
+            border-left: 3px solid var(--accent);
+        }
+
+        .player-list-item .char-class {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            float: right;
+        }
+
+        .player-list-item .name {
+            font-weight: 500;
+        }
+
+        .player-list-item .race-level {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        #saved-monster-list {
+            max-height: 250px;
+            overflow-y: auto;
         }
     </style>
 </head>
@@ -865,6 +942,13 @@
                         <div class="monster-list-panel">
                             <input type="text" class="monster-search" id="monster-search" placeholder="Search monsters...">
                             <div class="monster-list" id="monster-list"></div>
+                            <hr style="border: none; border-top: 1px solid var(--border); margin: 15px 0;">
+                            <h3 style="margin-bottom: 10px; color: var(--text-secondary);">Saved Monsters</h3>
+                            <input type="text" class="monster-search" id="saved-monster-search" placeholder="Search saved...">
+                            <div class="monster-list" id="saved-monster-list"></div>
+                            <div class="btn-row" style="margin-top: 10px;">
+                                <button class="btn btn-secondary" id="save-monster-btn" style="width: 100%;">Save Monster</button>
+                            </div>
                         </div>
                         <div class="monster-stats-panel" id="monster-stats-panel">
                             <div class="monster-header">
@@ -985,11 +1069,204 @@
                 </div>
 
                 <div class="tab-content" id="player-content">
-                    <div class="controls-panel">
-                        <h3>Player Character Settings</h3>
-                        <div class="control-group">
-                            <label>Coming soon...</label>
+                    <div class="player-panel">
+                        <div class="player-list-panel">
+                            <h3 style="margin-bottom: 15px; color: var(--text-secondary);">Saved Characters</h3>
+                            <input type="text" class="monster-search" id="player-search" placeholder="Search characters...">
+                            <div class="monster-list" id="player-list"></div>
+                            <div class="btn-row" style="margin-top: 10px;">
+                                <button class="btn btn-secondary" id="save-player-char" style="width: 100%;">Save Character</button>
+                            </div>
                         </div>
+                        <div class="player-stats-panel" id="player-stats-panel">
+                            <div class="monster-header">
+                                <input type="text" class="monster-name-input" id="player-name" placeholder="Character Name">
+                                <select class="monster-type-input" id="player-race">
+                                    <option value="Human">Human</option>
+                                    <option value="Hill Dwarf">Hill Dwarf</option>
+                                    <option value="Mountain Dwarf">Mountain Dwarf</option>
+                                    <option value="High Elf">High Elf</option>
+                                    <option value="Wood Elf">Wood Elf</option>
+                                    <option value="Lightfoot Halfling">Lightfoot Halfling</option>
+                                    <option value="Stout Halfling">Stout Halfling</option>
+                                    <option value="Half-Orc">Half-Orc</option>
+                                    <option value="Half-Elf">Half-Elf</option>
+                                    <option value="Dragonborn">Dragonborn</option>
+                                    <option value="Gnome">Gnome</option>
+                                    <option value="Tiefling">Tiefling</option>
+                                </select>
+                                <select class="monster-type-input" id="player-class">
+                                    <option value="Barbarian">Barbarian</option>
+                                    <option value="Bard">Bard</option>
+                                    <option value="Cleric">Cleric</option>
+                                    <option value="Druid">Druid</option>
+                                    <option value="Fighter">Fighter</option>
+                                    <option value="Monk">Monk</option>
+                                    <option value="Paladin">Paladin</option>
+                                    <option value="Ranger">Ranger</option>
+                                    <option value="Rogue">Rogue</option>
+                                    <option value="Sorcerer">Sorcerer</option>
+                                    <option value="Warlock">Warlock</option>
+                                    <option value="Wizard">Wizard</option>
+                                </select>
+                            </div>
+
+                            <div class="stat-row">
+                                <span class="stat-label">Level</span>
+                                <input type="number" class="stat-input" style="width: 60px;" id="player-level" value="1" min="1" max="20">
+                                <span class="stat-label" style="width: 80px;">Background</span>
+                                <select class="stat-input" style="width: 150px;" id="player-background">
+                                    <option value="Acolyte">Acolyte</option>
+                                    <option value="Charlatan">Charlatan</option>
+                                    <option value="Criminal">Criminal</option>
+                                    <option value="Entertainer">Entertainer</option>
+                                    <option value="Folk Hero">Folk Hero</option>
+                                    <option value="Guild Artisan">Guild Artisan</option>
+                                    <option value="Hermit">Hermit</option>
+                                    <option value="Noble">Noble</option>
+                                    <option value="Outlander">Outlander</option>
+                                    <option value="Sage">Sage</option>
+                                    <option value="Sailor">Sailor</option>
+                                    <option value="Soldier">Soldier</option>
+                                    <option value="Urchin">Urchin</option>
+                                </select>
+                                <span class="stat-label" style="width: 80px;">Alignment</span>
+                                <select class="stat-input" style="width: 150px;" id="player-alignment">
+                                    <option value="Lawful Good">Lawful Good</option>
+                                    <option value="Neutral Good">Neutral Good</option>
+                                    <option value="Chaotic Good">Chaotic Good</option>
+                                    <option value="Lawful Neutral">Lawful Neutral</option>
+                                    <option value="True Neutral">True Neutral</option>
+                                    <option value="Chaotic Neutral">Chaotic Neutral</option>
+                                    <option value="Lawful Evil">Lawful Evil</option>
+                                    <option value="Neutral Evil">Neutral Evil</option>
+                                    <option value="Chaotic Evil">Chaotic Evil</option>
+                                </select>
+                            </div>
+
+                            <div class="stat-row">
+                                <span class="stat-label">AC</span>
+                                <input type="number" class="stat-input hp-input" id="player-ac" value="10">
+                                <span class="stat-label" style="width: 50px;">HP</span>
+                                <input type="number" class="stat-input hp-input" id="player-hp" value="10">
+                                <span class="stat-label" style="width: 70px;">Speed</span>
+                                <input type="text" class="stat-input" style="width: 80px;" id="player-speed" value="30 ft.">
+                                <span class="stat-label" style="width: 100px;">Prof Bonus</span>
+                                <input type="text" class="stat-input" style="width: 50px;" id="player-prof" value="+2" readonly>
+                            </div>
+
+                            <div class="monster-attributes">
+                                <div class="attr-group">
+                                    <h4>Ability Scores <button class="btn btn-secondary" id="roll-abilities" style="padding: 4px 8px; font-size: 0.75rem;">Roll 4d6</button></h4>
+                                    <div class="attr-row">
+                                        <label>STR</label>
+                                        <input type="number" class="stat-input" id="player-str" value="10">
+                                        <span class="stat-mod" id="player-str-mod">+0</span>
+                                    </div>
+                                    <div class="attr-row">
+                                        <label>DEX</label>
+                                        <input type="number" class="stat-input" id="player-dex" value="10">
+                                        <span class="stat-mod" id="player-dex-mod">+0</span>
+                                    </div>
+                                    <div class="attr-row">
+                                        <label>CON</label>
+                                        <input type="number" class="stat-input" id="player-con" value="10">
+                                        <span class="stat-mod" id="player-con-mod">+0</span>
+                                    </div>
+                                    <div class="attr-row">
+                                        <label>INT</label>
+                                        <input type="number" class="stat-input" id="player-int" value="10">
+                                        <span class="stat-mod" id="player-int-mod">+0</span>
+                                    </div>
+                                    <div class="attr-row">
+                                        <label>WIS</label>
+                                        <input type="number" class="stat-input" id="player-wis" value="10">
+                                        <span class="stat-mod" id="player-wis-mod">+0</span>
+                                    </div>
+                                    <div class="attr-row">
+                                        <label>CHA</label>
+                                        <input type="number" class="stat-input" id="player-cha" value="10">
+                                        <span class="stat-mod" id="player-cha-mod">+0</span>
+                                    </div>
+                                </div>
+
+                                <div class="attr-group">
+                                    <h4>Saving Throws</h4>
+                                    <div class="attr-row">
+                                        <input type="checkbox" id="player-save-str" style="width: 18px;">
+                                        <label>STR</label>
+                                        <span class="stat-mod" id="player-save-str-mod">+0</span>
+                                    </div>
+                                    <div class="attr-row">
+                                        <input type="checkbox" id="player-save-dex" style="width: 18px;">
+                                        <label>DEX</label>
+                                        <span class="stat-mod" id="player-save-dex-mod">+0</span>
+                                    </div>
+                                    <div class="attr-row">
+                                        <input type="checkbox" id="player-save-con" style="width: 18px;">
+                                        <label>CON</label>
+                                        <span class="stat-mod" id="player-save-con-mod">+0</span>
+                                    </div>
+                                    <div class="attr-row">
+                                        <input type="checkbox" id="player-save-int" style="width: 18px;">
+                                        <label>INT</label>
+                                        <span class="stat-mod" id="player-save-int-mod">+0</span>
+                                    </div>
+                                    <div class="attr-row">
+                                        <input type="checkbox" id="player-save-wis" style="width: 18px;">
+                                        <label>WIS</label>
+                                        <span class="stat-mod" id="player-save-wis-mod">+0</span>
+                                    </div>
+                                    <div class="attr-row">
+                                        <input type="checkbox" id="player-save-cha" style="width: 18px;">
+                                        <label>CHA</label>
+                                        <span class="stat-mod" id="player-save-cha-mod">+0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="monster-attributes" style="margin-top: 15px;">
+                                <div class="attr-group">
+                                    <h4>Skills</h4>
+                                    <div id="player-skills-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+                                    </div>
+                                </div>
+                                <div class="attr-group">
+                                    <h4>Other Proficiencies</h4>
+                                    <div class="attr-row">
+                                        <label>AC Bonus</label>
+                                        <input type="text" class="stat-input" style="width: 60px;" id="player-ac-bonus" value="+0">
+                                    </div>
+                                    <div class="attr-row">
+                                        <label>Initiative</label>
+                                        <span class="stat-mod" id="player-init-mod">+0</span>
+                                    </div>
+                                    <div class="attr-row">
+                                        <label>Passive Perception</label>
+                                        <span class="stat-mod" id="player-passive-perc">10</span>
+                                    </div>
+                                    <div class="attr-row">
+                                        <label>Hit Dice</label>
+                                        <input type="text" class="stat-input" style="width: 80px;" id="player-hit-dice" value="1d8">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="attr-group" style="margin-top: 15px;">
+                                <h4>Equipment <button class="btn btn-secondary" id="refresh-equipment" style="padding: 2px 8px; font-size: 0.7rem;">Refresh</button></h4>
+                                <textarea id="player-equipment" style="width: 100%; height: 80px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); padding: 8px; resize: vertical;" placeholder="Starter gear will be auto-generated..."></textarea>
+                            </div>
+
+                            <div class="attr-group" style="margin-top: 15px;">
+                                <h4>Features & Traits <button class="btn btn-secondary" id="refresh-features" style="padding: 2px 8px; font-size: 0.7rem;">Refresh</button></h4>
+                                <textarea id="player-features" style="width: 100%; height: 100px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); padding: 8px; resize: vertical;" placeholder="Class features and racial traits will appear here..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" id="generate-player">Generate Character</button>
+                        <button class="btn btn-secondary" id="randomize-player">Random Character</button>
+                        <button class="btn btn-secondary" id="export-player-html">Export to HTML</button>
                     </div>
                 </div>
 
@@ -1790,6 +2067,844 @@ const MONSTERS = {
             items: ['Gold Coins', 'Potion', 'Sword', 'Shield', 'Key', 'Scroll', 'Gem', 'Ring', 'Armor', 'Torch'],
             npcs: ['Merchant', 'Quest Giver', 'Guide', 'Innkeeper', 'Healer', 'Mysterious Stranger', 'Prisoner', 'Guard']
         };
+
+        const PLAYER_CLASSES = {
+            Barbarian: {
+                hitDie: 12,
+                savingThrows: ['STR', 'CON'],
+                skills: ['Animal Handling', 'Athletics', 'Intimidation', 'Nature', 'Perception', 'Survival'],
+                armorProf: ['Light Armor', 'Medium Armor', 'Shields'],
+                weaponProf: ['Simple Weapons', 'Martial Weapons'],
+                features: {
+                    1: { name: 'Rage', desc: 'Enter a rage as a bonus action. While raging, you gain +2 to damage rolls, resistance to bludgeoning/piercing/slashing, and advantage on STR checks and saves. Lasts 1 minute.' },
+                    2: { name: 'Unarmored Defense', desc: 'While not wearing armor, your AC = 10 + DEX + CON.' },
+                    5: { name: 'Extra Attack', desc: 'You can attack twice instead of once when you take the Attack action on your turn.' },
+                    7: { name: 'Feral Instinct', desc: 'Advantage on initiative rolls. Can act normally after being surprised if you enter rage first.' },
+                    11: { name: 'Brutal Critical', desc: 'Can roll one additional weapon damage die when determining extra damage for a critical hit.' },
+                    15: { name: 'Relentless Rage', desc: 'If your rage drops to 0 HP, make a CON save (DC 10 + damage taken) to drop to 1 HP instead.' },
+                    18: { name: 'Persistent Rage', desc: 'Your rage ends only if you end it or are knocked unconscious.' },
+                    20: { name: 'Primal Champion', desc: 'Maximum values for STR and CON become 24.' }
+                }
+            },
+            Bard: {
+                hitDie: 8,
+                savingThrows: ['DEX', 'CHA'],
+                skills: ['Acrobatics', 'Animal Handling', 'Arcana', 'Athletics', 'Deception', 'History', 'Insight', 'Intimidation', 'Investigation', 'Medicine', 'Nature', 'Perception', 'Performance', 'Persuasion', 'Religion', 'Sleight of Hand', 'Stealth', 'Survival'],
+                armorProf: ['Light Armor'],
+                weaponProf: ['Simple Weapons', 'Hand Crossbows', 'Longswords', 'Rapiers', 'Shortswords'],
+                spellcaster: true,
+                castingAbility: 'CHA',
+                features: {
+                    1: { name: 'Bardic Inspiration', desc: 'As a bonus action, inspire another creature within 60ft. They gain a d6 bonus to one ability check, attack roll, or saving throw within 10ft of you.' },
+                    2: { name: 'Song of Rest', desc: 'Short rests are more restorative. Allies who hear your performance regain an extra 1d6 HP.' },
+                    5: { name: 'Font of Inspiration', desc: 'Regain all expended Bardic Inspiration dice after a short or long rest.' },
+                    10: { name: 'Magical Secrets', desc: 'Learn two spells of your choice from any class spell list.' }
+                }
+            },
+            Cleric: {
+                hitDie: 8,
+                savingThrows: ['WIS', 'CHA'],
+                skills: ['History', 'Insight', 'Medicine', 'Persuasion', 'Religion'],
+                armorProf: ['Light Armor', 'Medium Armor', 'Heavy Armor', 'Shields'],
+                weaponProf: ['Simple Weapons'],
+                spellcaster: true,
+                castingAbility: 'WIS',
+                features: {
+                    1: { name: 'Divine Domain', desc: 'Choose a domain (Life, Light, Nature, Tempest, Trickery, War, Knowledge, Grave).' },
+                    2: { name: 'Channel Divinity', desc: 'Channel divine energy to fuel magical effects.' },
+                    6: { name: 'Destroy Undead', desc: 'Automatically destroy undead of CR less than or equal to your cleric level / 3.' },
+                    8: { name: 'Divine Intervention', desc: 'Attempt to request aid from your deity. If you fail, you can try again after 7 days.' }
+                }
+            },
+            Druid: {
+                hitDie: 8,
+                savingThrows: ['INT', 'WIS'],
+                skills: ['Arcana', 'Animal Handling', 'Insight', 'Medicine', 'Nature', 'Perception', 'Religion', 'Survival'],
+                armorProf: ['Light Armor', 'Medium Armor', 'Shields'],
+                weaponProf: ['Clubs', 'Daggers', 'Darts', 'Javelins', 'Maces', 'Quarterstaffs', 'Scimitars', 'Sickles', 'Slings', 'Spears'],
+                spellcaster: true,
+                castingAbility: 'WIS',
+                features: {
+                    1: { name: 'Druidic', desc: 'Know Druidic language and can recognize hidden druidic signs.' },
+                    2: { name: 'Wild Shape', desc: 'As an action, transform into a beast you have seen. CR limited by level.' },
+                    4: { name: 'Wild Shape Improvement', desc: 'Can transform into elementals at 10th level.' },
+                    18: { name: 'Timeless Body', desc: 'You age slower and require half the food and water.' },
+                    20: { name: 'Archdruid', desc: 'Wild Shape without limit and ignore verbal/somatic components.' }
+                }
+            },
+            Fighter: {
+                hitDie: 10,
+                savingThrows: ['STR', 'CON'],
+                skills: ['Acrobatics', 'Animal Handling', 'Athletics', 'History', 'Insight', 'Intimidation', 'Perception', 'Survival'],
+                armorProf: ['All Armor', 'Shields'],
+                weaponProf: ['Simple Weapons', 'Martial Weapons'],
+                features: {
+                    1: { name: 'Fighting Style', desc: 'Choose Archery, Defense, Dueling, Great Weapon Fighting, Protection, or Two-Weapon Fighting.' },
+                    2: { name: 'Second Wind', desc: 'As a bonus action, heal 1d10 + fighter level HP. Once per rest.' },
+                    5: { name: 'Extra Attack', desc: 'Attack twice per action (3 times at 11th, 4 times at 20th).' },
+                    9: { name: 'Indomitable', desc: 'Reroll a failed saving throw. Useable once per long rest, more at higher levels.' }
+                }
+            },
+            Monk: {
+                hitDie: 8,
+                savingThrows: ['STR', 'DEX'],
+                skills: ['Acrobatics', 'Athletics', 'History', 'Insight', 'Religion', 'Stealth'],
+                armorProf: [],
+                weaponProf: ['Simple Weapons', 'Shortswords'],
+                features: {
+                    1: { name: 'Unarmored Defense', desc: 'AC = 10 + DEX + WIS when wearing no armor.' },
+                    2: { name: 'Martial Arts', desc: 'Use DEX instead of STR for attacks. Bonus action unarmed strikes do extra damage.' },
+                    3: { name: 'Ki', desc: 'Spend ki points for special abilities: Flurry of Blows, Patient Defense, Step of the Wind.' },
+                    5: { name: 'Extra Attack', desc: 'Attack twice when taking the Attack action.' },
+                    9: { name: 'Stunning Strike', desc: 'Melee weapon attacks can stun target on failed CON save (DC = 8 + DEX + prof bonus).' },
+                    15: { name: 'Diamond Soul', desc: 'Spend 1 ki to reroll any failed save.' },
+                    20: { name: 'Perfect Self', desc: 'Regain 4 ki points when HP drops to 0.' }
+                }
+            },
+            Paladin: {
+                hitDie: 10,
+                savingThrows: ['WIS', 'CHA'],
+                skills: ['Athletics', 'Insight', 'Intimidation', 'Medicine', 'Persuasion', 'Religion'],
+                armorProf: ['All Armor', 'Shields'],
+                weaponProf: ['Simple Weapons', 'Martial Weapons'],
+                spellcaster: true,
+                castingAbility: 'CHA',
+                features: {
+                    1: { name: 'Divine Sense', desc: 'Detect celestials, fiends, undead, and holy/unholy objects within 60ft.' },
+                    2: { name: 'Lay on Hands', desc: 'Touch a creature to heal 5 HP per paladin level. Or spend 5 HP to cure poison.' },
+                    3: { name: 'Divine Smite', desc: 'When you hit with a melee weapon, deal extra 2d8 radiant damage (2d6 for spells).' },
+                    5: { name: 'Extra Attack', desc: 'Attack twice when taking the Attack action.' },
+                    11: { name: 'Improved Divine Smite', desc: 'All melee weapon hits deal 1d8 extra radiant damage.' },
+                    20: { name: 'Aura of Protection', desc: 'You and allies within 10ft gain bonus to saves equal to CHA modifier.' }
+                }
+            },
+            Ranger: {
+                hitDie: 10,
+                savingThrows: ['DEX', 'WIS'],
+                skills: ['Animal Handling', 'Athletics', 'Insight', 'Investigation', 'Nature', 'Perception', 'Stealth', 'Survival'],
+                armorProf: ['Light Armor', 'Medium Armor', 'Shields'],
+                weaponProf: ['Simple Weapons', 'Martial Weapons'],
+                spellcaster: true,
+                castingAbility: 'WIS',
+                features: {
+                    1: { name: 'Favored Enemy', desc: 'Choose one creature type. Advantage on checks to track and recall info about them.' },
+                    2: { name: 'Natural Explorer', desc: 'Gain benefits while traveling in favored terrain.' },
+                    3: { name: 'Primeval Awareness', desc: 'Spend a use of a spell slot to detect creatures of favored enemy within 30ft.' },
+                    5: { name: 'Extra Attack', desc: 'Attack twice when taking the Attack action.' },
+                    8: { name: 'Land\'s Stride', desc: 'Move through nonmagical difficult terrain without penalty.' },
+                    10: { name: 'Hide in Plain Sight', desc: 'While in natural terrain, you can hide with a +10 bonus to Stealth.' },
+                    14: { name: 'Vanish', desc: 'Cannot be tracked by magical means. Use bonus action to hide.' },
+                    18: { name: 'Feral Senses', desc: 'Attacks against creatures you can\'t see don\'t have disadvantage.' },
+                    20: { name: 'Foe Slayer', desc: 'Once per turn, add your WIS modifier to attack or damage rolls against favored enemy.' }
+                }
+            },
+            Rogue: {
+                hitDie: 8,
+                savingThrows: ['DEX', 'INT'],
+                skills: ['Acrobatics', 'Athletics', 'Deception', 'Insight', 'Intimidation', 'Investigation', 'Perception', 'Performance', 'Persuasion', 'Sleight of Hand', 'Stealth'],
+                armorProf: ['Light Armor'],
+                weaponProf: ['Simple Weapons', 'Hand Crossbows', 'Longswords', 'Rapiers', 'Shortswords'],
+                features: {
+                    1: { name: 'Expertise', desc: 'Choose two skills (or one and thieves\' tools). Double proficiency bonus.' },
+                    2: { name: 'Sneak Attack', desc: 'Once per turn, deal extra 1d6 damage on attacks with advantage or an adjacent ally.' },
+                    3: { name: 'Cunning Action', desc: 'Use bonus action to Dash, Disengage, or Hide.' },
+                    5: { name: 'Uncanny Dodge', desc: 'When an attacker you can see hits you, halve the damage.' },
+                    7: { name: 'Evasion', desc: 'Successful DEX saves for half damage take no damage instead.' },
+                    11: { name: 'Reliable Talent', desc: 'Results of 9 or lower on ability checks using proficiency are treated as 10.' },
+                    14: { name: 'Blindsense', desc: 'If you can hear, you know the location of hidden/invisible creatures within 10ft.' },
+                    15: { name: 'Slippery Mind', desc: 'Advantage on WIS saves against charm/fright.' },
+                    18: { name: 'Elusive', desc: 'Attacks against you have disadvantage.' },
+                    20: { name: 'Stroke of Luck', desc: 'Turn a missed attack into a hit, or ability check failure into 20. Once per rest.' }
+                }
+            },
+            Sorcerer: {
+                hitDie: 6,
+                savingThrows: ['CON', 'CHA'],
+                skills: ['Arcana', 'Deception', 'Insight', 'Intimidation', 'Persuasion', 'Religion'],
+                armorProf: [],
+                weaponProf: ['Daggers', 'Darts', 'Slings', 'Quarterstaffs', 'Light Crossbows'],
+                spellcaster: true,
+                castingAbility: 'CHA',
+                features: {
+                    1: { name: 'Sorcerous Origin', desc: 'Choose Draconic Bloodline or Wild Magic.' },
+                    2: { name: 'Flexible Casting', desc: 'Create slots by expending sorcery points.' },
+                    3: { name: 'Metamagic', desc: 'Choose options like Quicken, Twin Spell, Empowered Spell.' },
+                    17: { name: 'Sorcerous Restoration', desc: 'Regain 4 spent sorcery points after a long rest.' }
+                }
+            },
+            Warlock: {
+                hitDie: 8,
+                savingThrows: ['WIS', 'CHA'],
+                skills: ['Arcana', 'Deception', 'History', 'Intimidation', 'Investigation', 'Nature', 'Religion'],
+                armorProf: ['Light Armor'],
+                weaponProf: ['Simple Weapons'],
+                spellcaster: true,
+                castingAbility: 'CHA',
+                features: {
+                    1: { name: 'Otherworldly Patron', desc: 'Choose a patron: Archfey, Fiend, Great Old One, Hexblade, etc.' },
+                    2: { name: 'Pact Magic', desc: 'Cast spells using Charisma. Can recover slots on a short rest at higher levels.' },
+                    3: { name: 'Pact Boon', desc: 'Choose one: Pact of the Blade, Pact of the Chain, Pact of the Tome, Pact of the Talisman.' },
+                    11: { name: 'Mystic Arcanum', desc: 'Learn a 6th, 7th, 8th, and 9th level spell.' },
+                    15: { name: 'Eldritch Master', desc: 'Regain all expended pact magic slots after a short rest.' }
+                }
+            },
+            Wizard: {
+                hitDie: 6,
+                savingThrows: ['INT', 'WIS'],
+                skills: ['Arcana', 'History', 'Insight', 'Investigation', 'Medicine', 'Religion'],
+                armorProf: [],
+                weaponProf: ['Daggers', 'Darts', 'Slings', 'Quarterstaffs', 'Light Crossbows'],
+                spellcaster: true,
+                castingAbility: 'INT',
+                features: {
+                    1: { name: 'Arcane Recovery', desc: 'Once per day during a short rest, recover spell slots totaling half wizard level (rounded up).' },
+                    2: { name: 'Arcane Tradition', desc: 'Choose a school: Abjuration, Conjuration, Divination, Enchantment, Evocation, Illusion, Necromancy, Transmutation.' },
+                    18: { name: 'Spell Mastery', desc: 'Choose a 1st and 2nd level spell to cast at will.' },
+                    20: { name: 'Signature Spells', desc: 'Cast your two 3rd-level spells once each without expending spell slots.' }
+                }
+            }
+        };
+
+        const PLAYER_RACES = {
+            'Human': { speed: 30, abilities: { STR: 1, DEX: 1, CON: 1, INT: 1, WIS: 1, CHA: 1 }, features: ['Bonus Proficiency', 'Native Language'] },
+            'Hill Dwarf': { speed: 25, abilities: { CON: 2, WIS: 1 }, features: ['Dwarven Toughness (+1 HP per level)', 'Stonecunning'] },
+            'Mountain Dwarf': { speed: 25, abilities: { CON: 2, STR: 2 }, features: ['Dwarven Armor Training', 'Stonecunning'] },
+            'High Elf': { speed: 30, abilities: { DEX: 2, INT: 1 }, features: ['Darkvision', 'Cantrip', 'Elf Weapon Training', 'Fleet of Foot', 'Trance'] },
+            'Wood Elf': { speed: 35, abilities: { DEX: 2, WIS: 1 }, features: ['Darkvision', 'Mask of the Wild', 'Elf Weapon Training', 'Fleet of Foot', 'Trance'] },
+            'Lightfoot Halfling': { speed: 30, abilities: { DEX: 2, CHA: 1 }, features: ['Lucky', 'Brave', 'Halfling Nimbleness', 'Naturally Stealthy'] },
+            'Stout Halfling': { speed: 30, abilities: { DEX: 2, CON: 1 }, features: ['Lucky', 'Brave', 'Halfling Nimbleness', 'Stout Resilience (adv on POISON saves)'] },
+            'Half-Orc': { speed: 30, abilities: { STR: 2, CON: 1, CHA: -1 }, features: ['Darkvision', 'Menacing', 'Relentless Endurance', 'Savage Attacks'] },
+            'Half-Elf': { speed: 30, abilities: { CHA: 2, choose: {1: ['DEX', 'INT', 'WIS']} }, features: ['Darkvision', 'Fey Ancestry', 'Skill Versatility (2 skills)'] },
+            'Dragonborn': { speed: 30, abilities: { CHA: 1, STR: 2 }, features: ['Draconic Ancestry (breath weapon)', 'Damage Resistance'] },
+            'Gnome': { speed: 25, abilities: { INT: 2, DEX: 1 }, features: ['Darkvision', 'Gnome Cunning', 'Natural Illusionist (Minor Illusion cantrip)', 'Speak with Small Beasts'] },
+            'Tiefling': { speed: 30, abilities: { CHA: 2, INT: 1 }, features: ['Darkvision', 'Hellish Resistance', 'Infernal Legacy (thaumaturgy at will)'] }
+        };
+
+        const SKILLS = {
+            'Acrobatics': { ability: 'DEX' },
+            'Animal Handling': { ability: 'WIS' },
+            'Arcana': { ability: 'INT' },
+            'Athletics': { ability: 'STR' },
+            'Deception': { ability: 'CHA' },
+            'History': { ability: 'INT' },
+            'Insight': { ability: 'WIS' },
+            'Intimidation': { ability: 'CHA' },
+            'Investigation': { ability: 'INT' },
+            'Medicine': { ability: 'WIS' },
+            'Nature': { ability: 'INT' },
+            'Perception': { ability: 'WIS' },
+            'Performance': { ability: 'CHA' },
+            'Persuasion': { ability: 'CHA' },
+            'Religion': { ability: 'INT' },
+            'Sleight of Hand': { ability: 'DEX' },
+            'Stealth': { ability: 'DEX' },
+            'Survival': { ability: 'WIS' }
+        };
+
+        const STARTER_EQUIPMENT = {
+            'Barbarian': ['Greataxe', 'Two Handaxes', 'Explorer\'s Pack', 'Javelins x4'],
+            'Bard': ['Rapier', 'Diplomat\'s Pack', 'Musical Instrument', 'Leather Armor'],
+            'Cleric': ['Mace', 'Scale Mail', 'Light Crossbow + 20 bolts', 'Shield', 'Holy Symbol'],
+            'Druid': ['Scimitar', 'Leather Armor', 'Explorer\'s Pack', 'Druidic Focus'],
+            'Fighter': ['Longsword', 'Shield', 'Chain Mail', 'Military Pick', 'Dagger x2'],
+            'Monk': ['Shortsword x2', 'Dart x10', 'Artisan\'s Pack', 'Entertainer\'s Pack'],
+            'Paladin': ['Longsword', 'Shield', 'Chain Mail', 'Holy Symbol', 'Javelins x5'],
+            'Ranger': ['Longbow + Arrow x20', 'Shortsword', 'Leather Armor', 'Explorer\'s Pack'],
+            'Rogue': ['Rapier', 'Shortbow + Arrow x20', 'Thieves\' Tools', 'Burglar\'s Pack'],
+            'Sorcerer': ['Component Pouch', 'Arcane Focus', 'Dagger x2', 'Scholar\'s Pack'],
+            'Warlock': ['Quarterstaff', 'Light Crossbow + 20 bolts', 'Component Pouch', 'Scholar\'s Pack'],
+            'Wizard': ['Quarterstaff', 'Component Pouch', 'Arcane Focus', 'Scholar\'s Pack']
+        };
+
+        const BACKGROUND_EQUIPMENT = {
+            'Acolyte': ['Holy Symbol', 'Prayer Book', 'Incense x5', 'Common Clothes'],
+            'Charlatan': ['Fine Clothes', 'Disguise Kit', 'Forgery Kit'],
+            'Criminal': ['Thieves\' Tools', 'Crowbar', 'Dark Common Clothes'],
+            'Entertainer': ['Musical Instrument', 'Favor of an Admirer', 'Costume'],
+            'Folk Hero': ['Artisan\'s Tools', 'Shovel', 'Iron Pot', 'Common Clothes'],
+            'Guild Artisan': ['Letter of Introduction', 'Journeyman\'s Tools', 'Common Clothes'],
+            'Hermit': ['Scroll Case', 'Winter Blanket', 'Herbalism Kit', 'Common Clothes'],
+            'Noble': ['Fine Clothes', 'Signet Ring', 'Purse of 25 GP'],
+            'Outlander': ['Staff', 'Hunting Trap', 'Traveler\'s Clothes'],
+            'Sage': ['Quill and Ink', 'Letter of Introduction', 'Common Clothes'],
+            'Sailor': ['Navigator\'s Tools', 'Sea Chart', 'Common Clothes'],
+            'Soldier': ['Gaming Set', 'Military Rank Insignia', 'Common Clothes'],
+            'Urchin': ['Small Knife', 'City Map', 'Pet Mouse', 'Common Clothes']
+        };
+
+        // ══════════════════════════════════════════════════════════════════════════════════════
+        // ★★★ SAVED CHARACTERS DATA ★★★
+        // To add a saved character: Copy the character object from the save dialog and paste it here.
+        // Each character should be on its own line for easy editing/removal.
+        // Search for: "SAVED_CHARACTERS_DATA" to find this section quickly.
+        //
+        // Be sure each entry is separated by a comma!
+        // ══════════════════════════════════════════════════════════════════════════════════════
+        const SAVED_CHARACTERS_DATA = [
+
+        ];
+
+        // Convert saved data to runtime array
+        let savedCharacters = [...SAVED_CHARACTERS_DATA];
+
+        // ══════════════════════════════════════════════════════════════════════════════════════
+        // ★★★ SAVED MONSTERS DATA ★★★
+        // To add a saved monster: Copy the monster object from the save dialog and paste it here.
+        // Each monster should be on its own line for easy editing/removal.
+        // Search for: "SAVED_MONSTERS_DATA" to find this section quickly.
+        //
+        // Be sure each entry is separated by a comma!
+        // ══════════════════════════════════════════════════════════════════════════════════════
+        const SAVED_MONSTERS_DATA = [
+
+        ];
+
+        // Convert saved data to runtime array
+        let savedMonsters = [...SAVED_MONSTERS_DATA];
+
+        function getAbilityMod(score) {
+            return Math.floor((score - 10) / 2);
+        }
+
+        function formatMod(mod) {
+            return mod >= 0 ? '+' + mod : '' + mod;
+        }
+
+        function roll4d6DropLowest() {
+            const rolls = [Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1,
+                          Math.floor(Math.random() * 6) + 1, Math.floor(Math.random() * 6) + 1];
+            rolls.sort((a, b) => a - b);
+            return rolls[1] + rolls[2] + rolls[3];
+        }
+
+        function getProficiencyBonus(level) {
+            return Math.ceil(1 + level / 4);
+        }
+
+        function getSkillModifier(abilityScore, proficiency, profBonus) {
+            return getAbilityMod(abilityScore) + (proficiency ? profBonus : 0);
+        }
+
+        function rollHitPoints(hitDie, level, conMod) {
+            let total = 0;
+            for (let i = 0; i < level; i++) {
+                total += Math.floor(Math.random() * hitDie) + 1 + conMod;
+            }
+            return Math.max(total, level * (1 + conMod));
+        }
+
+        function updatePlayerStats(savedSkills = null) {
+            const level = parseInt(document.getElementById('player-level').value) || 1;
+            const profBonus = getProficiencyBonus(level);
+            document.getElementById('player-prof').value = '+' + profBonus;
+
+            ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(stat => {
+                const val = parseInt(document.getElementById('player-' + stat).value) || 10;
+                const mod = getAbilityMod(val);
+                document.getElementById('player-' + stat + '-mod').textContent = formatMod(mod);
+            });
+
+            const dex = parseInt(document.getElementById('player-dex').value) || 10;
+            const wis = parseInt(document.getElementById('player-wis').value) || 10;
+            document.getElementById('player-init-mod').textContent = formatMod(getAbilityMod(dex));
+            document.getElementById('player-passive-perc').textContent = 10 + getAbilityMod(wis);
+
+            const charClass = document.getElementById('player-class').value;
+            if (PLAYER_CLASSES[charClass]) {
+                document.getElementById('player-hit-dice').value = level + 'd' + PLAYER_CLASSES[charClass].hitDie;
+            }
+
+            updateSavingThrows();
+            updateSkillList(savedSkills);
+            updateFeaturesAndTraits();
+            updateEquipment();
+        }
+
+        function updateSavingThrows() {
+            const level = parseInt(document.getElementById('player-level').value) || 1;
+            const profBonus = getProficiencyBonus(level);
+            const charClass = document.getElementById('player-class').value;
+            const classData = PLAYER_CLASSES[charClass];
+
+            ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(stat => {
+                const statUpper = stat.toUpperCase();
+                const baseMod = getAbilityMod(parseInt(document.getElementById('player-' + stat).value) || 10);
+                const isClassSave = classData && classData.savingThrows.includes(statUpper);
+                const isProficient = document.getElementById('player-save-' + stat).checked || isClassSave;
+                const saveMod = baseMod + (isProficient ? profBonus : 0);
+                document.getElementById('player-save-' + stat + '-mod').textContent = formatMod(saveMod);
+            });
+        }
+
+        function updateSkillList(savedSkills = null) {
+            const container = document.getElementById('player-skills-list');
+            container.innerHTML = '';
+
+            const charClass = document.getElementById('player-class').value;
+            const classData = PLAYER_CLASSES[charClass];
+
+            Object.keys(SKILLS).forEach(skillName => {
+                const skillData = SKILLS[skillName];
+                const ability = skillData.ability.toLowerCase();
+                const abilityScore = parseInt(document.getElementById('player-' + ability).value) || 10;
+                const mod = getAbilityMod(abilityScore);
+                const skillId = skillName.replace(/\s+/g, '-');
+                const isClassSkill = classData && classData.skills.includes(skillName);
+
+                // Check saved skills with multiple format variations
+                let savedValue = null;
+                if (savedSkills) {
+                    savedValue = savedSkills[skillId] ?? 
+                                 savedSkills[skillId.replace(/-/g, '')] ?? 
+                                 savedSkills[skillName] ??
+                                 savedSkills[skillId.replace(/-/g, ' ')] ?? 
+                                 savedSkills[skillName.replace(/ /g, '-')];
+                }
+
+                // If loading saved skills, use those; otherwise use class defaults
+                let isProficient = isClassSkill;
+                if (savedValue !== null) {
+                    isProficient = savedValue;
+                }
+
+                const level = parseInt(document.getElementById('player-level').value) || 1;
+                const profBonus = getProficiencyBonus(level);
+                const totalMod = mod + (isProficient ? profBonus : 0);
+
+                const div = document.createElement('div');
+                div.className = 'skill-checkbox';
+                div.innerHTML = `
+                    <input type="checkbox" id="skill-${skillId}" ${isProficient ? 'checked' : ''}>
+                    <span>${skillName} (${skillData.ability})</span>
+                    <span class="skill-mod">${formatMod(totalMod)}</span>
+                `;
+                container.appendChild(div);
+
+                div.querySelector('input').addEventListener('change', () => updateSkillMods());
+            });
+        }
+
+        function updateSkillMods() {
+            const level = parseInt(document.getElementById('player-level').value) || 1;
+            const profBonus = getProficiencyBonus(level);
+
+            Object.keys(SKILLS).forEach(skillName => {
+                const skillData = SKILLS[skillName];
+                const ability = skillData.ability.toLowerCase();
+                const abilityScore = parseInt(document.getElementById('player-' + ability).value) || 10;
+                const mod = getAbilityMod(abilityScore);
+                const checkbox = document.getElementById('skill-' + skillName.replace(/\s+/g, '-'));
+                const totalMod = mod + (checkbox && checkbox.checked ? profBonus : 0);
+                const modSpan = checkbox ? checkbox.parentElement.querySelector('.skill-mod') : null;
+                if (modSpan) modSpan.textContent = formatMod(totalMod);
+            });
+        }
+
+        function updateFeaturesAndTraits() {
+            const charClass = document.getElementById('player-class').value;
+            const race = document.getElementById('player-race').value;
+            const level = parseInt(document.getElementById('player-level').value) || 1;
+            const classData = PLAYER_CLASSES[charClass];
+            const raceData = PLAYER_RACES[race];
+            const featuresField = document.getElementById('player-features');
+
+            // Only auto-populate if field is empty (preserve manual edits)
+            if (featuresField.value.trim() === '') {
+                let features = [];
+
+                if (raceData && raceData.features) {
+                    features.push(...raceData.features);
+                }
+
+                if (classData && classData.features) {
+                    for (let l = 1; l <= level; l++) {
+                        if (classData.features[l]) {
+                            features.push(`Level ${l}: ${classData.features[l].name} - ${classData.features[l].desc}`);
+                        }
+                    }
+                }
+
+                featuresField.value = features.join('\n\n');
+            }
+        }
+
+        function updateEquipment() {
+            const charClass = document.getElementById('player-class').value;
+            const background = document.getElementById('player-background').value;
+            const equipmentField = document.getElementById('player-equipment');
+
+            // Only auto-populate if field is empty (preserve manual edits)
+            if (equipmentField.value.trim() === '') {
+                let equipment = [];
+
+                if (STARTER_EQUIPMENT[charClass]) {
+                    equipment.push(...STARTER_EQUIPMENT[charClass]);
+                }
+
+                if (BACKGROUND_EQUIPMENT[background]) {
+                    equipment.push(...BACKGROUND_EQUIPMENT[background]);
+                }
+
+                equipment.push('15 GP'); // Starting gold
+                equipment.push('Common Clothes');
+
+                equipmentField.value = equipment.join('\n');
+            }
+        }
+
+        function generateRandomCharacter() {
+            const races = Object.keys(PLAYER_RACES);
+            const classes = Object.keys(PLAYER_CLASSES);
+            const alignments = [
+                'Lawful Good', 'Neutral Good', 'Chaotic Good',
+                'Lawful Neutral', 'True Neutral', 'Chaotic Neutral',
+                'Lawful Evil', 'Neutral Evil', 'Chaotic Evil'
+            ];
+            const backgrounds = ['Acolyte', 'Charlatan', 'Criminal', 'Entertainer', 'Folk Hero', 'Guild Artisan', 'Hermit', 'Noble', 'Outlander', 'Sage', 'Sailor', 'Soldier', 'Urchin'];
+
+            const name = generateRandomName();
+            const race = races[Math.floor(Math.random() * races.length)];
+            const charClass = classes[Math.floor(Math.random() * classes.length)];
+            const alignment = alignments[Math.floor(Math.random() * alignments.length)];
+            const background = backgrounds[Math.floor(Math.random() * backgrounds.length)];
+            const level = Math.floor(Math.random() * 20) + 1;
+
+            document.getElementById('player-name').value = name;
+            document.getElementById('player-race').value = race;
+            document.getElementById('player-class').value = charClass;
+            document.getElementById('player-alignment').value = alignment;
+            document.getElementById('player-background').value = background;
+            document.getElementById('player-level').value = level;
+
+            const raceData = PLAYER_RACES[race];
+            document.getElementById('player-speed').value = raceData.speed + ' ft.';
+
+            ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(stat => {
+                let base = roll4d6DropLowest();
+                if (raceData.abilities[stat.toUpperCase()]) {
+                    base += raceData.abilities[stat.toUpperCase()];
+                }
+                document.getElementById('player-' + stat).value = Math.min(Math.max(base, 1), 20);
+            });
+
+            const classData = PLAYER_CLASSES[charClass];
+            const conMod = getAbilityMod(parseInt(document.getElementById('player-con').value));
+            const hp = rollHitPoints(classData.hitDie, level, conMod);
+            document.getElementById('player-hp').value = hp;
+
+            let ac = 10 + getAbilityMod(parseInt(document.getElementById('player-dex').value));
+            if (charClass === 'Monk') {
+                ac = 10 + getAbilityMod(parseInt(document.getElementById('player-dex').value)) + getAbilityMod(parseInt(document.getElementById('player-wis').value));
+            } else if (charClass === 'Barbarian') {
+                ac = 10 + getAbilityMod(parseInt(document.getElementById('player-dex').value)) + conMod;
+            }
+            document.getElementById('player-ac').value = ac;
+
+            classData.savingThrows.forEach(save => {
+                document.getElementById('player-save-' + save.toLowerCase()).checked = true;
+            });
+
+            // Clear these fields so they get auto-populated fresh
+            document.getElementById('player-equipment').value = '';
+            document.getElementById('player-features').value = '';
+
+            updatePlayerStats();
+        }
+
+        function generateRandomName() {
+            const firstNames = ['Aldric', 'Brenna', 'Cedric', 'Dara', 'Eldon', 'Fiona', 'Gideon', 'Hilda', 'Idris', 'Jessa', 'Kael', 'Lyra', 'Magnus', 'Nora', 'Osric', 'Petra', 'Quinn', 'Rowan', 'Seren', 'Torvin'];
+            const lastNames = ['Blackwood', 'Brightmoon', 'Coldwater', 'Darkhollow', 'Elderwood', 'Fireforge', 'Goldleaf', 'Hillcrest', 'Ironforge', 'Jadewind', 'Keenblade', 'Lightfoot', 'Moonwhisper', 'Nightsky', 'Oakenshield', 'Proudfoot', 'Quicksilver', 'Ravencrest', 'Silverstream', 'Thornwood'];
+            return firstNames[Math.floor(Math.random() * firstNames.length)] + ' ' + lastNames[Math.floor(Math.random() * lastNames.length)];
+        }
+
+        function savePlayerCharacter() {
+            const name = document.getElementById('player-name').value || 'Unnamed Character';
+            const charClass = document.getElementById('player-class').value;
+            const race = document.getElementById('player-race').value;
+            const level = document.getElementById('player-level').value;
+
+            // Collect saving throw selections
+            const savingThrows = {
+                str: document.getElementById('player-save-str').checked,
+                dex: document.getElementById('player-save-dex').checked,
+                con: document.getElementById('player-save-con').checked,
+                int: document.getElementById('player-save-int').checked,
+                wis: document.getElementById('player-save-wis').checked,
+                cha: document.getElementById('player-save-cha').checked
+            };
+
+            // Collect skill selections (use ID as-is since it matches the checkbox IDs)
+            const skills = {};
+            document.querySelectorAll('#player-skills-list input[type="checkbox"]').forEach(cb => {
+                skills[cb.id.replace('skill-', '')] = cb.checked;
+            });
+
+            const character = {
+                name: name,
+                charClass: charClass,
+                race: race,
+                level: level,
+                alignment: document.getElementById('player-alignment').value,
+                background: document.getElementById('player-background').value,
+                ac: document.getElementById('player-ac').value,
+                hp: document.getElementById('player-hp').value,
+                speed: document.getElementById('player-speed').value,
+                str: document.getElementById('player-str').value,
+                dex: document.getElementById('player-dex').value,
+                con: document.getElementById('player-con').value,
+                int: document.getElementById('player-int').value,
+                wis: document.getElementById('player-wis').value,
+                cha: document.getElementById('player-cha').value,
+                savingThrows: savingThrows,
+                skills: skills,
+                acBonus: document.getElementById('player-ac-bonus').value,
+                equipment: document.getElementById('player-equipment').value,
+                features: document.getElementById('player-features').value
+            };
+
+            savedCharacters.push(character);
+            renderPlayerList();
+
+            // Show dialog with code to paste
+            const codeToPaste = JSON.stringify(character, null, 2);
+
+            // Create a custom dialog with copy button
+            const dialog = document.createElement('div');
+            dialog.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:10000;';
+            dialog.innerHTML = `
+                <div style="background:var(--bg-secondary);border:2px solid var(--accent);border-radius:8px;padding:20px;max-width:500px;width:90%;max-height:80vh;overflow:auto;color:var(--text-primary);">
+                    <h3 style="margin:0 0 15px 0;color:var(--accent);">Character Saved!</h3>
+                    <p style="margin:0 0 15px 0;color:var(--text-secondary);">To permanently save this character:</p>
+                    <ol style="margin:0 0 15px 20px;color:var(--text-secondary);line-height:1.6;">
+                        <li>Search for: <code style="background:var(--bg-primary);padding:2px 6px;border-radius:3px;color:var(--accent);">SAVED_CHARACTERS_DATA</code></li>
+                        <li>Find the SAVED_CHARACTERS_DATA array</li>
+                        <li>Paste the code below inside the array</li>
+                        <li>! Be sure each player is separated by a comma !</li>
+                        <li>Save the file and refresh</li>
+                    </ol>
+                    <pre id="char-code" style="background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;padding:10px;max-height:200px;overflow:auto;font-size:0.8rem;white-space:pre-wrap;word-break:break-all;margin:0 0 15px 0;">${codeToPaste}</pre>
+                    <div style="display:flex;gap:10px;justify-content:flex-end;">
+                        <button id="copy-char-btn" style="padding:10px 20px;background:var(--accent);color:white;border:none;border-radius:4px;cursor:pointer;font-weight:600;">Copy to Clipboard</button>
+                        <button id="close-dialog-btn" style="padding:10px 20px;background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;cursor:pointer;">Close</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(dialog);
+
+            document.getElementById('copy-char-btn').addEventListener('click', () => {
+                navigator.clipboard.writeText(codeToPaste).then(() => {
+                    document.getElementById('copy-char-btn').textContent = 'Copied!';
+                    document.getElementById('copy-char-btn').style.background = '#4ade80';
+                    setTimeout(() => {
+                        document.getElementById('copy-char-btn').textContent = 'Copy to Clipboard';
+                        document.getElementById('copy-char-btn').style.background = '';
+                    }, 2000);
+                });
+            });
+
+            document.getElementById('close-dialog-btn').addEventListener('click', () => {
+                document.body.removeChild(dialog);
+            });
+
+            dialog.addEventListener('click', (e) => {
+                if (e.target === dialog) {
+                    document.body.removeChild(dialog);
+                }
+            });
+        }
+
+        function loadPlayerCharacter(index) {
+            const char = savedCharacters[index];
+            if (!char) return;
+
+            document.getElementById('player-name').value = char.name;
+            document.getElementById('player-class').value = char.charClass;
+            document.getElementById('player-race').value = char.race;
+            document.getElementById('player-level').value = char.level;
+            document.getElementById('player-alignment').value = char.alignment;
+            document.getElementById('player-background').value = char.background;
+            document.getElementById('player-ac').value = char.ac;
+            document.getElementById('player-hp').value = char.hp;
+            document.getElementById('player-speed').value = char.speed;
+            document.getElementById('player-str').value = char.str;
+            document.getElementById('player-dex').value = char.dex;
+            document.getElementById('player-con').value = char.con;
+            document.getElementById('player-int').value = char.int;
+            document.getElementById('player-wis').value = char.wis;
+            document.getElementById('player-cha').value = char.cha;
+
+            // Restore saving throws
+            if (char.savingThrows) {
+                ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(save => {
+                    const cb = document.getElementById('player-save-' + save);
+                    if (cb) cb.checked = char.savingThrows[save];
+                });
+            }
+
+            // Restore AC bonus
+            if (char.acBonus) {
+                document.getElementById('player-ac-bonus').value = char.acBonus;
+            }
+
+            // Restore equipment and features (don't clear them first)
+            if (char.equipment !== undefined) {
+                document.getElementById('player-equipment').value = char.equipment;
+            }
+            if (char.features !== undefined) {
+                document.getElementById('player-features').value = char.features;
+            }
+
+            // Update all stats with saved skills
+            updatePlayerStats(char.skills || null);
+        }
+
+        function renderPlayerList() {
+            const list = document.getElementById('player-list');
+            list.innerHTML = '';
+
+            savedCharacters.forEach((char, index) => {
+                const item = document.createElement('div');
+                item.className = 'player-list-item';
+                item.innerHTML = `
+                    <div class="name">${char.name}</div>
+                    <div class="race-level">Lvl ${char.level} ${char.race}</div>
+                    <div class="char-class">${char.charClass}</div>
+                `;
+                item.addEventListener('click', () => loadPlayerCharacter(index));
+                list.appendChild(item);
+            });
+        }
+
+        function exportPlayerHTML() {
+            const name = document.getElementById('player-name').value || 'Unnamed Character';
+            const charClass = document.getElementById('player-class').value;
+            const race = document.getElementById('player-race').value;
+            const level = document.getElementById('player-level').value;
+            const alignment = document.getElementById('player-alignment').value;
+            const background = document.getElementById('player-background').value;
+            const ac = document.getElementById('player-ac').value;
+            const hp = document.getElementById('player-hp').value;
+            const speed = document.getElementById('player-speed').value;
+            const prof = document.getElementById('player-prof').value;
+            const hitDice = document.getElementById('player-hit-dice').value;
+            const acBonus = document.getElementById('player-ac-bonus').value;
+            const str = document.getElementById('player-str').value;
+            const dex = document.getElementById('player-dex').value;
+            const con = document.getElementById('player-con').value;
+            const int = document.getElementById('player-int').value;
+            const wis = document.getElementById('player-wis').value;
+            const cha = document.getElementById('player-cha').value;
+            const equipment = document.getElementById('player-equipment').value;
+            const features = document.getElementById('player-features').value;
+
+            // Collect saving throws
+            const saves = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+            const savingThrows = saves
+                .filter(s => document.getElementById('player-save-' + s).checked)
+                .map(s => s.toUpperCase())
+                .join(', ');
+
+            // Collect skills
+            const skillList = [];
+            document.querySelectorAll('#player-skills-list input[type="checkbox"]').forEach(cb => {
+                if (cb.checked) {
+                    const skillName = cb.id.replace('skill-', '').replace(/-/g, ' ');
+                    skillList.push(skillName);
+                }
+            });
+
+            const styles = `
+                :root {
+                    --bg-primary: #f8f4e8;
+                    --bg-secondary: #f0e8d8;
+                    --text-primary: #2c2416;
+                    --text-secondary: #5c4a32;
+                    --accent: #8b0000;
+                    --border: #8b7355;
+                }
+                body { font-family: 'Bookman Old Style', Georgia, serif; background: var(--bg-primary); color: var(--text-primary); padding: 20px; margin: 0; }
+                .stat-block { background: var(--bg-secondary); border: 2px solid var(--border); padding: 20px; max-width: 600px; margin: 0 auto; box-shadow: 0 0 20px rgba(0,0,0,0.3); }
+                h1 { text-align: center; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin: 0 0 10px 0; font-size: 1.8em; }
+                .subtitle { text-align: center; font-style: italic; margin-bottom: 15px; color: var(--text-secondary); }
+                .abilities { display: flex; justify-content: space-around; text-align: center; margin: 15px 0; }
+                .ability { padding: 8px; }
+                .ability strong { display: block; color: var(--accent); font-size: 1.1em; border-bottom: 1px solid var(--border); }
+                .ability span { font-size: 0.9em; }
+                hr { border: none; border-top: 1px solid var(--border); margin: 15px 0; }
+                .info-row { display: flex; gap: 20px; flex-wrap: wrap; margin: 10px 0; }
+                .info-item { flex: 1; min-width: 150px; }
+                .info-item strong { color: var(--accent); }
+                .section { margin: 15px 0; }
+                .section h2 { font-size: 1.1em; border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-bottom: 10px; }
+                .features { white-space: pre-wrap; line-height: 1.5; }
+            `;
+
+            const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${name} - Character Sheet</title>
+    <style>${styles}</style>
+</head>
+<body>
+    <div class="stat-block">
+        <h1>${name}</h1>
+        <p class="subtitle">${race} ${charClass} | Level ${level} | ${background} | ${alignment}</p>
+        
+        <div class="info-row">
+            <div class="info-item"><strong>Armor Class</strong> ${ac}</div>
+            <div class="info-item"><strong>Hit Points</strong> ${hp}</div>
+            <div class="info-item"><strong>Speed</strong> ${speed}</div>
+        </div>
+            <div class="info-row">
+            <div class="info-item"><strong>Proficiency Bonus</strong> ${prof}</div>
+            <div class="info-item"><strong>Hit Dice</strong> ${hitDice}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-item"><strong>AC Bonus</strong> ${acBonus}</div>
+            <div class="info-item"><strong>Saving Throws</strong> ${savingThrows}</div>
+        </div>
+        
+        <hr>
+        
+        <div class="abilities">
+            <div class="ability"><strong>STR</strong>${str}<br><span>(${(getAbilityMod(parseInt(str)) >= 0 ? '+' : '') + getAbilityMod(parseInt(str))})</span></div>
+            <div class="ability"><strong>DEX</strong>${dex}<br><span>(${(getAbilityMod(parseInt(dex)) >= 0 ? '+' : '') + getAbilityMod(parseInt(dex))})</span></div>
+            <div class="ability"><strong>CON</strong>${con}<br><span>(${(getAbilityMod(parseInt(con)) >= 0 ? '+' : '') + getAbilityMod(parseInt(con))})</span></div>
+            <div class="ability"><strong>INT</strong>${int}<br><span>(${(getAbilityMod(parseInt(int)) >= 0 ? '+' : '') + getAbilityMod(parseInt(int))})</span></div>
+            <div class="ability"><strong>WIS</strong>${wis}<br><span>(${(getAbilityMod(parseInt(wis)) >= 0 ? '+' : '') + getAbilityMod(parseInt(wis))})</span></div>
+            <div class="ability"><strong>CHA</strong>${cha}<br><span>(${(getAbilityMod(parseInt(cha)) >= 0 ? '+' : '') + getAbilityMod(parseInt(cha))})</span></div>
+        </div>
+        
+        <hr>
+        
+        <div class="section">
+            <h2>Skills</h2>
+            <p>${skillList.length > 0 ? skillList.join(', ') : 'None'}</p>
+        </div>
+        
+        <div class="section">
+            <h2>Equipment</h2>
+            <p style="white-space: pre-wrap;">${equipment}</p>
+        </div>
+        
+        <div class="section">
+            <h2>Features & Traits</h2>
+            <p class="features">${features}</p>
+        </div>
+    </div>
+</body>
+</html>`;
+
+            const blob = new Blob([html], { type: 'text/html' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `${name.toLowerCase().replace(/\s+/g, '-')}-character-sheet.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
 
         // ============================================
         // TAB NAVIGATION
@@ -3245,6 +4360,145 @@ const MONSTERS = {
             populateMonsterList(MONSTERS);
         }
 
+        function saveMonster() {
+            const name = document.getElementById('monster-name').value;
+            if (!name || name === 'Select a monster') {
+                alert('Please select or enter a monster name first.');
+                return;
+            }
+
+            const monster = {
+                name: name,
+                size: document.getElementById('monster-size').value,
+                type: document.getElementById('monster-type').value,
+                ac: document.getElementById('monster-ac').value,
+                hp: document.getElementById('monster-hp').value,
+                speed: document.getElementById('monster-speed').value,
+                cr: document.getElementById('monster-cr').value,
+                xp: document.getElementById('monster-xp').value,
+                str: document.getElementById('monster-str').value,
+                dex: document.getElementById('monster-dex').value,
+                con: document.getElementById('monster-con').value,
+                int: document.getElementById('monster-int').value,
+                wis: document.getElementById('monster-wis').value,
+                cha: document.getElementById('monster-cha').value,
+                str_mod: document.getElementById('monster-str-mod').textContent,
+                dex_mod: document.getElementById('monster-dex-mod').textContent,
+                con_mod: document.getElementById('monster-con-mod').textContent,
+                int_mod: document.getElementById('monster-int-mod').textContent,
+                wis_mod: document.getElementById('monster-wis-mod').textContent,
+                cha_mod: document.getElementById('monster-cha-mod').textContent,
+                save_str: document.getElementById('monster-save-str').value,
+                save_dex: document.getElementById('monster-save-dex').value,
+                save_con: document.getElementById('monster-save-con').value,
+                save_int: document.getElementById('monster-save-int').value,
+                save_wis: document.getElementById('monster-save-wis').value,
+                save_cha: document.getElementById('monster-save-cha').value
+            };
+
+            savedMonsters.push(monster);
+            renderSavedMonsterList();
+
+            // Show dialog with code to paste
+            const codeToPaste = JSON.stringify(monster, null, 2);
+
+            const dialog = document.createElement('div');
+            dialog.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:10000;';
+            dialog.innerHTML = `
+                <div style="background:var(--bg-secondary);border:2px solid var(--accent);border-radius:8px;padding:20px;max-width:500px;width:90%;max-height:80vh;overflow:auto;color:var(--text-primary);">
+                    <h3 style="margin:0 0 15px 0;color:var(--accent);">Monster Saved!</h3>
+                    <p style="margin:0 0 15px 0;color:var(--text-secondary);">To permanently save this monster:</p>
+                    <ol style="margin:0 0 15px 20px;color:var(--text-secondary);line-height:1.6;">
+                        <li>Search for: <code style="background:var(--bg-primary);padding:2px 6px;border-radius:3px;color:var(--accent);">SAVED_MONSTERS_DATA</code></li>
+                        <li>Find the SAVED_MONSTERS_DATA array</li>
+                        <li>Paste the code below inside the array</li>
+                        <li>Be sure each entry is separated by a comma!</li>
+                        <li>Save the file and refresh</li>
+                    </ol>
+                    <pre style="background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;padding:10px;max-height:200px;overflow:auto;font-size:0.8rem;white-space:pre-wrap;word-break:break-all;margin:0 0 15px 0;">${codeToPaste}</pre>
+                    <div style="display:flex;gap:10px;justify-content:flex-end;">
+                        <button id="copy-monster-btn" style="padding:10px 20px;background:var(--accent);color:white;border:none;border-radius:4px;cursor:pointer;font-weight:600;">Copy to Clipboard</button>
+                        <button id="close-monster-dialog-btn" style="padding:10px 20px;background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;cursor:pointer;">Close</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(dialog);
+
+            document.getElementById('copy-monster-btn').addEventListener('click', () => {
+                navigator.clipboard.writeText(codeToPaste).then(() => {
+                    document.getElementById('copy-monster-btn').textContent = 'Copied!';
+                    document.getElementById('copy-monster-btn').style.background = '#4ade80';
+                    setTimeout(() => {
+                        document.getElementById('copy-monster-btn').textContent = 'Copy to Clipboard';
+                        document.getElementById('copy-monster-btn').style.background = '';
+                    }, 2000);
+                });
+            });
+
+            document.getElementById('close-monster-dialog-btn').addEventListener('click', () => {
+                document.body.removeChild(dialog);
+            });
+
+            dialog.addEventListener('click', (e) => {
+                if (e.target === dialog) {
+                    document.body.removeChild(dialog);
+                }
+            });
+        }
+
+        function loadSavedMonster(index) {
+            const monster = savedMonsters[index];
+            if (!monster) return;
+
+            document.getElementById('monster-name').value = monster.name;
+            document.getElementById('monster-size').value = monster.size;
+            document.getElementById('monster-type').value = monster.type;
+            document.getElementById('monster-ac').value = monster.ac;
+            document.getElementById('monster-hp').value = monster.hp;
+            document.getElementById('monster-speed').value = monster.speed;
+            document.getElementById('monster-cr').value = monster.cr;
+            document.getElementById('monster-xp').value = monster.xp;
+            document.getElementById('monster-str').value = monster.str;
+            document.getElementById('monster-dex').value = monster.dex;
+            document.getElementById('monster-con').value = monster.con;
+            document.getElementById('monster-int').value = monster.int;
+            document.getElementById('monster-wis').value = monster.wis;
+            document.getElementById('monster-cha').value = monster.cha;
+
+            document.getElementById('monster-str-mod').textContent = monster.str_mod;
+            document.getElementById('monster-dex-mod').textContent = monster.dex_mod;
+            document.getElementById('monster-con-mod').textContent = monster.con_mod;
+            document.getElementById('monster-int-mod').textContent = monster.int_mod;
+            document.getElementById('monster-wis-mod').textContent = monster.wis_mod;
+            document.getElementById('monster-cha-mod').textContent = monster.cha_mod;
+
+            document.getElementById('monster-save-str').value = monster.save_str;
+            document.getElementById('monster-save-dex').value = monster.save_dex;
+            document.getElementById('monster-save-con').value = monster.save_con;
+            document.getElementById('monster-save-int').value = monster.save_int;
+            document.getElementById('monster-save-wis').value = monster.save_wis;
+            document.getElementById('monster-save-cha').value = monster.save_cha;
+        }
+
+        function renderSavedMonsterList(filteredMonsters = null) {
+            const list = document.getElementById('saved-monster-list');
+            list.innerHTML = '';
+
+            const monstersToRender = filteredMonsters || savedMonsters;
+            monstersToRender.forEach((monster, originalIndex) => {
+                const item = document.createElement('div');
+                item.className = 'player-list-item';
+                item.innerHTML = `
+                    <div class="name">${monster.name}</div>
+                    <div class="race-level">${monster.size} ${monster.type}</div>
+                    <div class="char-class">CR ${monster.cr}</div>
+                `;
+                const savedIndex = filteredMonsters ? savedMonsters.indexOf(monster) : originalIndex;
+                item.addEventListener('click', () => loadSavedMonster(savedIndex));
+                list.appendChild(item);
+            });
+        }
+
         // Helper functions for managing custom content lists
         let dungeonCustomContents = {
             items: [],
@@ -3462,6 +4716,75 @@ const MONSTERS = {
                 }
                 populateMonsterList(filteredMonsters);
             });
+
+            document.getElementById('save-monster-btn').addEventListener('click', saveMonster);
+            
+            ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(stat => {
+                document.getElementById('monster-' + stat).addEventListener('input', () => {
+                    const score = parseInt(document.getElementById('monster-' + stat).value) || 10;
+                    const mod = getAbilityMod(score);
+                    document.getElementById('monster-' + stat + '-mod').textContent = formatMod(mod);
+                });
+            });
+            
+            renderSavedMonsterList();
+
+            document.getElementById('saved-monster-search').addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const filteredMonsters = savedMonsters.filter(m => m.name.toLowerCase().includes(searchTerm));
+                renderSavedMonsterList(filteredMonsters);
+            });
+
+            document.getElementById('player-class').addEventListener('change', updatePlayerStats);
+            document.getElementById('player-race').addEventListener('change', updatePlayerStats);
+            document.getElementById('player-level').addEventListener('change', updatePlayerStats);
+            document.getElementById('player-background').addEventListener('change', updateEquipment);
+
+            ['player-str', 'player-dex', 'player-con', 'player-int', 'player-wis', 'player-cha'].forEach(id => {
+                document.getElementById(id).addEventListener('input', updatePlayerStats);
+            });
+
+            document.getElementById('roll-abilities').addEventListener('click', () => {
+                const race = document.getElementById('player-race').value;
+                const raceData = PLAYER_RACES[race];
+
+                ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(stat => {
+                    let base = roll4d6DropLowest();
+                    if (raceData && raceData.abilities[stat.toUpperCase()]) {
+                        base += raceData.abilities[stat.toUpperCase()];
+                    }
+                    document.getElementById('player-' + stat).value = Math.min(Math.max(base, 1), 20);
+                });
+
+                updatePlayerStats();
+
+                const charClass = document.getElementById('player-class').value;
+                const classData = PLAYER_CLASSES[charClass];
+                const level = parseInt(document.getElementById('player-level').value) || 1;
+                const conMod = getAbilityMod(parseInt(document.getElementById('player-con').value));
+                document.getElementById('player-hp').value = rollHitPoints(classData.hitDie, level, conMod);
+            });
+
+            document.getElementById('generate-player').addEventListener('click', updatePlayerStats);
+
+            document.getElementById('randomize-player').addEventListener('click', generateRandomCharacter);
+
+            document.getElementById('save-player-char').addEventListener('click', savePlayerCharacter);
+
+            document.getElementById('export-player-html').addEventListener('click', exportPlayerHTML);
+
+            document.getElementById('refresh-equipment').addEventListener('click', () => {
+                document.getElementById('player-equipment').value = '';
+                updateEquipment();
+            });
+
+            document.getElementById('refresh-features').addEventListener('click', () => {
+                document.getElementById('player-features').value = '';
+                updateFeaturesAndTraits();
+            });
+
+            updatePlayerStats();
+            renderPlayerList();
 
             document.getElementById('export-monster-html').addEventListener('click', () => {
                 if (document.getElementById('monster-name').value === "Select a monster") {
