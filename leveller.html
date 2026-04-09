@@ -699,6 +699,11 @@
             font-size: 0.8rem;
             color: var(--text-secondary);
         }
+
+        #saved-monster-list {
+            max-height: 250px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
@@ -937,6 +942,13 @@
                         <div class="monster-list-panel">
                             <input type="text" class="monster-search" id="monster-search" placeholder="Search monsters...">
                             <div class="monster-list" id="monster-list"></div>
+                            <hr style="border: none; border-top: 1px solid var(--border); margin: 15px 0;">
+                            <h3 style="margin-bottom: 10px; color: var(--text-secondary);">Saved Monsters</h3>
+                            <input type="text" class="monster-search" id="saved-monster-search" placeholder="Search saved...">
+                            <div class="monster-list" id="saved-monster-list"></div>
+                            <div class="btn-row" style="margin-top: 10px;">
+                                <button class="btn btn-secondary" id="save-monster-btn" style="width: 100%;">Save Monster</button>
+                            </div>
                         </div>
                         <div class="monster-stats-panel" id="monster-stats-panel">
                             <div class="monster-header">
@@ -2334,6 +2346,21 @@ const MONSTERS = {
 
         // Convert saved data to runtime array
         let savedCharacters = [...SAVED_CHARACTERS_DATA];
+
+        // ══════════════════════════════════════════════════════════════════════════════════════
+        // ★★★ SAVED MONSTERS DATA ★★★
+        // To add a saved monster: Copy the monster object from the save dialog and paste it here.
+        // Each monster should be on its own line for easy editing/removal.
+        // Search for: "SAVED_MONSTERS_DATA" to find this section quickly.
+        //
+        // Be sure each entry is separated by a comma!
+        // ══════════════════════════════════════════════════════════════════════════════════════
+        const SAVED_MONSTERS_DATA = [
+
+        ];
+
+        // Convert saved data to runtime array
+        let savedMonsters = [...SAVED_MONSTERS_DATA];
 
         function getAbilityMod(score) {
             return Math.floor((score - 10) / 2);
@@ -4333,6 +4360,145 @@ const MONSTERS = {
             populateMonsterList(MONSTERS);
         }
 
+        function saveMonster() {
+            const name = document.getElementById('monster-name').value;
+            if (!name || name === 'Select a monster') {
+                alert('Please select or enter a monster name first.');
+                return;
+            }
+
+            const monster = {
+                name: name,
+                size: document.getElementById('monster-size').value,
+                type: document.getElementById('monster-type').value,
+                ac: document.getElementById('monster-ac').value,
+                hp: document.getElementById('monster-hp').value,
+                speed: document.getElementById('monster-speed').value,
+                cr: document.getElementById('monster-cr').value,
+                xp: document.getElementById('monster-xp').value,
+                str: document.getElementById('monster-str').value,
+                dex: document.getElementById('monster-dex').value,
+                con: document.getElementById('monster-con').value,
+                int: document.getElementById('monster-int').value,
+                wis: document.getElementById('monster-wis').value,
+                cha: document.getElementById('monster-cha').value,
+                str_mod: document.getElementById('monster-str-mod').textContent,
+                dex_mod: document.getElementById('monster-dex-mod').textContent,
+                con_mod: document.getElementById('monster-con-mod').textContent,
+                int_mod: document.getElementById('monster-int-mod').textContent,
+                wis_mod: document.getElementById('monster-wis-mod').textContent,
+                cha_mod: document.getElementById('monster-cha-mod').textContent,
+                save_str: document.getElementById('monster-save-str').value,
+                save_dex: document.getElementById('monster-save-dex').value,
+                save_con: document.getElementById('monster-save-con').value,
+                save_int: document.getElementById('monster-save-int').value,
+                save_wis: document.getElementById('monster-save-wis').value,
+                save_cha: document.getElementById('monster-save-cha').value
+            };
+
+            savedMonsters.push(monster);
+            renderSavedMonsterList();
+
+            // Show dialog with code to paste
+            const codeToPaste = JSON.stringify(monster, null, 2);
+
+            const dialog = document.createElement('div');
+            dialog.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:10000;';
+            dialog.innerHTML = `
+                <div style="background:var(--bg-secondary);border:2px solid var(--accent);border-radius:8px;padding:20px;max-width:500px;width:90%;max-height:80vh;overflow:auto;color:var(--text-primary);">
+                    <h3 style="margin:0 0 15px 0;color:var(--accent);">Monster Saved!</h3>
+                    <p style="margin:0 0 15px 0;color:var(--text-secondary);">To permanently save this monster:</p>
+                    <ol style="margin:0 0 15px 20px;color:var(--text-secondary);line-height:1.6;">
+                        <li>Search for: <code style="background:var(--bg-primary);padding:2px 6px;border-radius:3px;color:var(--accent);">SAVED_MONSTERS_DATA</code></li>
+                        <li>Find the SAVED_MONSTERS_DATA array</li>
+                        <li>Paste the code below inside the array</li>
+                        <li>Be sure each entry is separated by a comma!</li>
+                        <li>Save the file and refresh</li>
+                    </ol>
+                    <pre style="background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;padding:10px;max-height:200px;overflow:auto;font-size:0.8rem;white-space:pre-wrap;word-break:break-all;margin:0 0 15px 0;">${codeToPaste}</pre>
+                    <div style="display:flex;gap:10px;justify-content:flex-end;">
+                        <button id="copy-monster-btn" style="padding:10px 20px;background:var(--accent);color:white;border:none;border-radius:4px;cursor:pointer;font-weight:600;">Copy to Clipboard</button>
+                        <button id="close-monster-dialog-btn" style="padding:10px 20px;background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;cursor:pointer;">Close</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(dialog);
+
+            document.getElementById('copy-monster-btn').addEventListener('click', () => {
+                navigator.clipboard.writeText(codeToPaste).then(() => {
+                    document.getElementById('copy-monster-btn').textContent = 'Copied!';
+                    document.getElementById('copy-monster-btn').style.background = '#4ade80';
+                    setTimeout(() => {
+                        document.getElementById('copy-monster-btn').textContent = 'Copy to Clipboard';
+                        document.getElementById('copy-monster-btn').style.background = '';
+                    }, 2000);
+                });
+            });
+
+            document.getElementById('close-monster-dialog-btn').addEventListener('click', () => {
+                document.body.removeChild(dialog);
+            });
+
+            dialog.addEventListener('click', (e) => {
+                if (e.target === dialog) {
+                    document.body.removeChild(dialog);
+                }
+            });
+        }
+
+        function loadSavedMonster(index) {
+            const monster = savedMonsters[index];
+            if (!monster) return;
+
+            document.getElementById('monster-name').value = monster.name;
+            document.getElementById('monster-size').value = monster.size;
+            document.getElementById('monster-type').value = monster.type;
+            document.getElementById('monster-ac').value = monster.ac;
+            document.getElementById('monster-hp').value = monster.hp;
+            document.getElementById('monster-speed').value = monster.speed;
+            document.getElementById('monster-cr').value = monster.cr;
+            document.getElementById('monster-xp').value = monster.xp;
+            document.getElementById('monster-str').value = monster.str;
+            document.getElementById('monster-dex').value = monster.dex;
+            document.getElementById('monster-con').value = monster.con;
+            document.getElementById('monster-int').value = monster.int;
+            document.getElementById('monster-wis').value = monster.wis;
+            document.getElementById('monster-cha').value = monster.cha;
+
+            document.getElementById('monster-str-mod').textContent = monster.str_mod;
+            document.getElementById('monster-dex-mod').textContent = monster.dex_mod;
+            document.getElementById('monster-con-mod').textContent = monster.con_mod;
+            document.getElementById('monster-int-mod').textContent = monster.int_mod;
+            document.getElementById('monster-wis-mod').textContent = monster.wis_mod;
+            document.getElementById('monster-cha-mod').textContent = monster.cha_mod;
+
+            document.getElementById('monster-save-str').value = monster.save_str;
+            document.getElementById('monster-save-dex').value = monster.save_dex;
+            document.getElementById('monster-save-con').value = monster.save_con;
+            document.getElementById('monster-save-int').value = monster.save_int;
+            document.getElementById('monster-save-wis').value = monster.save_wis;
+            document.getElementById('monster-save-cha').value = monster.save_cha;
+        }
+
+        function renderSavedMonsterList(filteredMonsters = null) {
+            const list = document.getElementById('saved-monster-list');
+            list.innerHTML = '';
+
+            const monstersToRender = filteredMonsters || savedMonsters;
+            monstersToRender.forEach((monster, originalIndex) => {
+                const item = document.createElement('div');
+                item.className = 'player-list-item';
+                item.innerHTML = `
+                    <div class="name">${monster.name}</div>
+                    <div class="race-level">${monster.size} ${monster.type}</div>
+                    <div class="char-class">CR ${monster.cr}</div>
+                `;
+                const savedIndex = filteredMonsters ? savedMonsters.indexOf(monster) : originalIndex;
+                item.addEventListener('click', () => loadSavedMonster(savedIndex));
+                list.appendChild(item);
+            });
+        }
+
         // Helper functions for managing custom content lists
         let dungeonCustomContents = {
             items: [],
@@ -4549,6 +4715,24 @@ const MONSTERS = {
                     }
                 }
                 populateMonsterList(filteredMonsters);
+            });
+
+            document.getElementById('save-monster-btn').addEventListener('click', saveMonster);
+            
+            ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(stat => {
+                document.getElementById('monster-' + stat).addEventListener('input', () => {
+                    const score = parseInt(document.getElementById('monster-' + stat).value) || 10;
+                    const mod = getAbilityMod(score);
+                    document.getElementById('monster-' + stat + '-mod').textContent = formatMod(mod);
+                });
+            });
+            
+            renderSavedMonsterList();
+
+            document.getElementById('saved-monster-search').addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const filteredMonsters = savedMonsters.filter(m => m.name.toLowerCase().includes(searchTerm));
+                renderSavedMonsterList(filteredMonsters);
             });
 
             document.getElementById('player-class').addEventListener('change', updatePlayerStats);
