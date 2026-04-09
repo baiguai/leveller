@@ -2315,7 +2315,17 @@ const MONSTERS = {
             'Urchin': ['Small Knife', 'City Map', 'Pet Mouse', 'Common Clothes']
         };
 
-        let savedCharacters = [];
+        // ══════════════════════════════════════════════════════════════════════════════════════
+        // ★★★ SAVED CHARACTERS DATA ★★★
+        // To add a saved character: Copy the character object from the save dialog and paste it here.
+        // Each character should be on its own line for easy editing/removal.
+        // Search for: "SAVED_CHARACTERS_DATA" to find this section quickly.
+        // ══════════════════════════════════════════════════════════════════════════════════════
+        const SAVED_CHARACTERS_DATA = [
+        ];
+
+        // Convert saved data to runtime array
+        let savedCharacters = [...SAVED_CHARACTERS_DATA];
 
         function getAbilityMod(score) {
             return Math.floor((score - 10) / 2);
@@ -2571,6 +2581,53 @@ const MONSTERS = {
 
             savedCharacters.push(character);
             renderPlayerList();
+
+            // Show dialog with code to paste
+            const codeToPaste = JSON.stringify(character, null, 2);
+
+            // Create a custom dialog with copy button
+            const dialog = document.createElement('div');
+            dialog.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:10000;';
+            dialog.innerHTML = `
+                <div style="background:var(--bg-secondary);border:2px solid var(--accent);border-radius:8px;padding:20px;max-width:500px;width:90%;max-height:80vh;overflow:auto;color:var(--text-primary);">
+                    <h3 style="margin:0 0 15px 0;color:var(--accent);">Character Saved!</h3>
+                    <p style="margin:0 0 15px 0;color:var(--text-secondary);">To permanently save this character:</p>
+                    <ol style="margin:0 0 15px 20px;color:var(--text-secondary);line-height:1.6;">
+                        <li>Search for: <code style="background:var(--bg-primary);padding:2px 6px;border-radius:3px;color:var(--accent);">SAVED_CHARACTERS_DATA</code></li>
+                        <li>Find the SAVED_CHARACTERS_DATA array</li>
+                        <li>Paste the code below inside the array</li>
+                        <li>! Be sure each player is separated by a comma !</li>
+                        <li>Save the file and refresh</li>
+                    </ol>
+                    <pre id="char-code" style="background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;padding:10px;max-height:200px;overflow:auto;font-size:0.8rem;white-space:pre-wrap;word-break:break-all;margin:0 0 15px 0;">${codeToPaste}</pre>
+                    <div style="display:flex;gap:10px;justify-content:flex-end;">
+                        <button id="copy-char-btn" style="padding:10px 20px;background:var(--accent);color:white;border:none;border-radius:4px;cursor:pointer;font-weight:600;">Copy to Clipboard</button>
+                        <button id="close-dialog-btn" style="padding:10px 20px;background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;cursor:pointer;">Close</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(dialog);
+
+            document.getElementById('copy-char-btn').addEventListener('click', () => {
+                navigator.clipboard.writeText(codeToPaste).then(() => {
+                    document.getElementById('copy-char-btn').textContent = 'Copied!';
+                    document.getElementById('copy-char-btn').style.background = '#4ade80';
+                    setTimeout(() => {
+                        document.getElementById('copy-char-btn').textContent = 'Copy to Clipboard';
+                        document.getElementById('copy-char-btn').style.background = '';
+                    }, 2000);
+                });
+            });
+
+            document.getElementById('close-dialog-btn').addEventListener('click', () => {
+                document.body.removeChild(dialog);
+            });
+
+            dialog.addEventListener('click', (e) => {
+                if (e.target === dialog) {
+                    document.body.removeChild(dialog);
+                }
+            });
         }
 
         function loadPlayerCharacter(index) {
@@ -4431,6 +4488,7 @@ const MONSTERS = {
             document.getElementById('export-player-html').addEventListener('click', exportPlayerHTML);
 
             updatePlayerStats();
+            renderPlayerList();
 
             document.getElementById('export-monster-html').addEventListener('click', () => {
                 if (document.getElementById('monster-name').value === "Select a monster") {
