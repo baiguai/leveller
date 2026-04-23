@@ -2552,6 +2552,48 @@ const MONSTERS = {
             }
         }
 
+        function generateCharacterFromSelection() {
+            const name = generateRandomName();
+            const race = document.getElementById('player-race').value;
+            const charClass = document.getElementById('player-class').value;
+            const level = parseInt(document.getElementById('player-level').value) || 1;
+
+            document.getElementById('player-name').value = name;
+
+            const raceData = PLAYER_RACES[race];
+            document.getElementById('player-speed').value = raceData.speed + ' ft.';
+
+            ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(stat => {
+                let base = roll4d6DropLowest();
+                if (raceData.abilities[stat.toUpperCase()]) {
+                    base += raceData.abilities[stat.toUpperCase()];
+                }
+                document.getElementById('player-' + stat).value = Math.min(Math.max(base, 1), 20);
+            });
+
+            const classData = PLAYER_CLASSES[charClass];
+            const conMod = getAbilityMod(parseInt(document.getElementById('player-con').value));
+            const hp = rollHitPoints(classData.hitDie, level, conMod);
+            document.getElementById('player-hp').value = hp;
+
+            let ac = 10 + getAbilityMod(parseInt(document.getElementById('player-dex').value));
+            if (charClass === 'Monk') {
+                ac = 10 + getAbilityMod(parseInt(document.getElementById('player-dex').value)) + getAbilityMod(parseInt(document.getElementById('player-wis').value));
+            } else if (charClass === 'Barbarian') {
+                ac = 10 + getAbilityMod(parseInt(document.getElementById('player-dex').value)) + conMod;
+            }
+            document.getElementById('player-ac').value = ac;
+
+            classData.savingThrows.forEach(save => {
+                document.getElementById('player-save-' + save.toLowerCase()).checked = true;
+            });
+
+            document.getElementById('player-equipment').value = '';
+            document.getElementById('player-features').value = '';
+
+            updatePlayerStats();
+        }
+
         function generateRandomCharacter() {
             const races = Object.keys(PLAYER_RACES);
             const classes = Object.keys(PLAYER_CLASSES);
@@ -3559,104 +3601,55 @@ const MONSTERS = {
 
             // Places entrances and exits
             placeEntrancesExits(numEntrances, numExits) {
-                const potentialSpots = [];
-                // Prioritize room edges for entrances/exits
-                this.rooms.forEach(room => {
-                    for (let x = room.x; x < room.x + room.width; x++) {
-                        potentialSpots.push({ x, y: room.y }); // Top edge
-                        potentialSpots.push({ x, y: room.y + room.height - 1 }); // Bottom edge
-                    }
-                    for (let y = room.y; y < room.y + room.height; y++) {
-                        potentialSpots.push({ x: room.x, y }); // Left edge
-                        potentialSpots.push({ x: room.x + room.width - 1, y }); // Right edge
-                    }
-                });
+                if (this.rooms.length === 0) return;
 
-                this.shuffleArray(potentialSpots);
+                // Sort rooms by x position for predictable placement
+                const sortedRooms = [...this.rooms].sort((a, b) => a.x - b.x);
 
+                // Place entrances on the leftmost rooms (first few rooms)
                 this.entrances = [];
-                for (let i = 0; i < numEntrances && potentialSpots.length > 0; i++) {
-                    const { x, y } = potentialSpots.pop();
-                    if (this.grid[y][x] === 1) { // Ensure it's a floor tile
-                        this.grid[y][x] = 2; // Mark as entrance
+                for (let i = 0; i < numEntrances && i < sortedRooms.length; i++) {
+                    const room = sortedRooms[i];
+                    // Use left edge of the room
+                    const x = room.x;
+                    const y = Math.floor(room.y + room.height / 2);
+                    if (this.grid[y][x] === 1) {
+                        this.grid[y][x] = 2;
                         this.entrances.push({ x, y });
+                    } else {
+                        // Try another spot on the left edge
+                        for (let ry = room.y; ry < room.y + room.height; ry++) {
+                            if (this.grid[ry][room.x] === 1) {
+                                this.grid[ry][room.x] = 2;
+                                this.entrances.push({ x: room.x, y: ry });
+                                break;
+                            }
+                        }
                     }
                 }
 
+                // Place exits on the rightmost rooms (last few rooms)
                 this.exits = [];
-                for (let i = 0; i < numExits && potentialSpots.length > 0; i++) {
-                    const { x, y } = potentialSpots.pop();
-                    if (this.grid[y][x] === 1) { // Ensure it's a floor tile
-                        this.grid[y][x] = 3; // Mark as exit
+                const rightmostRooms = sortedRooms.slice(-numExits).reverse();
+                for (let i = 0; i < numExits && i < rightmostRooms.length; i++) {
+                    const room = rightmostRooms[i];
+                    // Use right edge of the room
+                    const x = room.x + room.width - 1;
+                    const y = Math.floor(room.y + room.height / 2);
+                    if (this.grid[y][x] === 1) {
+                        this.grid[y][x] = 3;
                         this.exits.push({ x, y });
-                    }
-                }
-            }
-
-            // Places features (pools, traps, secrets)
-            placeFeatures(features) {
-                this.features = []; // Clear previous features
-                const availableFloorCells = [];
-                for (let y = 1; y < this.height - 1; y++) {
-                    for (let x = 1; x < this.width - 1; x++) {
-                        // Only place on regular floor tiles (1) not already special (2,3,4,5,6)
-                        if (this.grid[y][x] === 1) {
-                            availableFloorCells.push({ x, y });
+                    } else {
+                        // Try another spot on the right edge
+                        for (let ry = room.y; ry < room.y + room.height; ry++) {
+                            if (this.grid[ry][room.x + room.width - 1] === 1) {
+                                this.grid[ry][room.x + room.width - 1] = 3;
+                                this.exits.push({ x: room.x + room.width - 1, y: ry });
+                                break;
+                            }
                         }
                     }
                 }
-                this.shuffleArray(availableFloorCells);
-
-                // Place pools
-                if (features.pools) {
-                    const numPools = Math.floor(availableFloorCells.length * CONFIG.dungeon.featureChance / 2);
-                    for (let i = 0; i < numPools && availableFloorCells.length > 0; i++) {
-                        const { x, y } = availableFloorCells.pop();
-                        this.grid[y][x] = 4; // Mark as pool
-                        this.features.push({ x, y, type: 'pool' });
-                    }
-                }
-
-                // Place traps
-                if (features.traps) {
-                    const numTraps = Math.floor(availableFloorCells.length * CONFIG.dungeon.featureChance);
-                    for (let i = 0; i < numTraps && availableFloorCells.length > 0; i++) {
-                        const { x, y } = availableFloorCells.pop();
-                        this.grid[y][x] = 5; // Mark as trap
-                        this.features.push({ x, y, type: 'trap' });
-                    }
-                }
-            }
-
-            // Places custom content (items, npcs, monsters)
-            placeCustomContent(customContents) {
-                // Reset positions of existing custom content
-                customContents.items.forEach(c => { c.x = null; c.y = null; });
-                customContents.npcs.forEach(c => { c.x = null; c.y = null; });
-                customContents.monsters.forEach(c => { c.x = null; c.y = null; });
-
-                const availableFloorCells = [];
-                for (let y = 1; y < this.height - 1; y++) {
-                    for (let x = 1; x < this.width - 1; x++) {
-                        // Only place on regular floor tiles (1) not already special (2,3,4,5,6)
-                        if (this.grid[y][x] === 1) {
-                            availableFloorCells.push({ x, y });
-                        }
-                    }
-                }
-                this.shuffleArray(availableFloorCells);
-
-                ['items', 'npcs', 'monsters'].forEach(type => {
-                    customContents[type].forEach(content => {
-                        if (availableFloorCells.length > 0) {
-                            const { x, y } = availableFloorCells.pop();
-                            content.x = x;
-                            content.y = y;
-                        } else {
-                            console.warn(`Not enough space to place all custom ${type}!`);
-                        }
-                    });
-                });
             }
 
             // Helper to shuffle an array (Fisher-Yates)
@@ -3664,32 +3657,6 @@ const MONSTERS = {
                 for (let i = array.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [array[i], array[j]] = [array[j], array[i]];
-                }
-            }
-
-            // Places entrances and exits
-            placeEntrancesExits(numEntrances, numExits) {
-                const availableFloorCells = [];
-                for (let y = 1; y < this.height - 1; y++) {
-                    for (let x = 1; x < this.width - 1; x++) {
-                        if (this.grid[y][x] === 1) {
-                            availableFloorCells.push({ x, y });
-                        }
-                    }
-                }
-
-                this.shuffleArray(availableFloorCells);
-
-                // Place entrances
-                for (let i = 0; i < numEntrances && availableFloorCells.length > 0; i++) {
-                    const { x, y } = availableFloorCells.pop();
-                    this.grid[y][x] = 2; // Mark as entrance
-                }
-
-                // Place exits
-                for (let i = 0; i < numExits && availableFloorCells.length > 0; i++) {
-                    const { x, y } = availableFloorCells.pop();
-                    this.grid[y][x] = 3; // Mark as exit
                 }
             }
 
@@ -3918,49 +3885,179 @@ const MONSTERS = {
                 const cs = this.cellSize;
 
                 let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
-                svg += `<rect width="${w}" height="${h}" fill="${CONFIG.colors.background}"/>`; // Use background for full canvas
 
-                // Create a temporary grid to mark room cells
-                const roomGrid = Array(this.height).fill(null).map(() => Array(this.width).fill(false));
+                // Background rect (full dungeon bounds)
+                svg += `<rect x="0" y="0" width="${w}" height="${h}" fill="${CONFIG.colors.wall}"/>`;
+
+                // Find the bounding box of all floor tiles (rooms + corridors)
+                let minX = this.width, minY = this.height, maxX = 0, maxY = 0;
+                for (let y = 0; y < this.height; y++) {
+                    for (let x = 0; x < this.width; x++) {
+                        if (this.grid[y][x] !== 0) {
+                            minX = Math.min(minX, x);
+                            minY = Math.min(minY, y);
+                            maxX = Math.max(maxX, x);
+                            maxY = Math.max(maxY, y);
+                        }
+                    }
+                }
+                // Add some padding
+                minX = Math.max(0, minX - 1);
+                minY = Math.max(0, minY - 1);
+                maxX = Math.min(this.width - 1, maxX + 1);
+                maxY = Math.min(this.height - 1, maxY + 1);
+
+                // Create a grid to track which cells we've drawn
+                const drawn = Array(this.height).fill(null).map(() => Array(this.width).fill(false));
+
+                // Determine which cells are rooms
+                const roomCells = new Set();
                 this.rooms.forEach(room => {
                     for (let y = room.y; y < room.y + room.height; y++) {
                         for (let x = room.x; x < room.x + room.width; x++) {
-                            roomGrid[y][x] = true;
+                            roomCells.add(`${x},${y}`);
                         }
                     }
                 });
 
+                // Draw rooms as single rects
+                this.rooms.forEach(room => {
+                    const rx = room.x * cs;
+                    const ry = room.y * cs;
+                    const rw = room.width * cs;
+                    const rh = room.height * cs;
+                    svg += `<rect x="${rx}" y="${ry}" width="${rw}" height="${rh}" fill="${CONFIG.colors.room}"/>`;
+                    for (let y = room.y; y < room.y + room.height; y++) {
+                        for (let x = room.x; x < room.x + room.width; x++) {
+                            drawn[y][x] = true;
+                        }
+                    }
+                });
+
+                // Draw corridors as connected floor areas (not rooms)
+                // Find all non-room floor cells and group them into connected regions
+                const corridorCells = [];
                 for (let y = 0; y < this.height; y++) {
                     for (let x = 0; x < this.width; x++) {
-                        const cx = x * cs;
-                        const cy = y * cs;
-                        let label = '';
-                        let fillColor = CONFIG.colors.wall;
-
-                        if (this.grid[y][x] === 0) {
-                            fillColor = CONFIG.colors.wall;
-                        } else if (this.grid[y][x] === 2) { // Entrance
-                            fillColor = CONFIG.colors.entrance;
-                            label = 'E';
-                        } else if (this.grid[y][x] === 3) { // Exit
-                            fillColor = CONFIG.colors.exit;
-                            label = 'X';
-                        } else if (this.grid[y][x] === 4) { // Pool
-                            fillColor = CONFIG.colors.pool;
-                            label = 'P';
-                        } else if (this.grid[y][x] === 5) { // Trap
-                            fillColor = CONFIG.colors.trap;
-                            label = 'T';
-                        } else if (this.grid[y][x] === 6 && !roomGrid[y][x]) { // Secret
-                            fillColor = CONFIG.colors.secret;
-                        } else if (roomGrid[y][x]) {
-                            fillColor = CONFIG.colors.room;
-                        } else if (this.grid[y][x] === 1) { // Regular floor/corridor
-                            fillColor = CONFIG.colors.corridor;
+                        if (this.grid[y][x] !== 0 && !roomCells.has(`${x},${y}`)) {
+                            corridorCells.push({ x, y, type: this.grid[y][x] });
                         }
-                        svg += `<rect x="${cx}" y="${cy}" width="${cs}" height="${cs}" fill="${fillColor}"/>`;
-                        if (label) {
-                            svg += `<text x="${cx + cs / 2}" y="${cy + cs / 2}" font-family="Arial" font-size="${cs / 2}" fill="${CONFIG.colors.text_primary}" text-anchor="middle" dominant-baseline="middle">${label}</text>`;
+                    }
+                }
+
+                // Group corridor cells into connected regions using flood fill
+                const visited = new Set();
+                const corridors = [];
+
+                corridorCells.forEach(cell => {
+                    const key = `${cell.x},${cell.y}`;
+                    if (!visited.has(key)) {
+                        const region = [];
+                        const queue = [cell];
+                        visited.add(key);
+
+                        while (queue.length > 0) {
+                            const curr = queue.shift();
+                            region.push(curr);
+
+                            // Check 4 neighbors
+                            const neighbors = [
+                                { x: curr.x - 1, y: curr.y },
+                                { x: curr.x + 1, y: curr.y },
+                                { x: curr.x, y: curr.y - 1 },
+                                { x: curr.x, y: curr.y + 1 }
+                            ];
+
+                            neighbors.forEach(n => {
+                                const nKey = `${n.x},${n.y}`;
+                                if (n.x >= 0 && n.x < this.width && n.y >= 0 && n.y < this.height &&
+                                    !visited.has(nKey) && !roomCells.has(nKey) && this.grid[n.y][n.x] !== 0) {
+                                    visited.add(nKey);
+                                    queue.push({ x: n.x, y: n.y, type: this.grid[n.y][n.x] });
+                                }
+                            });
+                        }
+                        corridors.push(region);
+                    }
+                });
+
+                // Draw each corridor region as a single rect
+                corridors.forEach(region => {
+                    if (region.length === 0) return;
+
+                    let cMinX = this.width, cMinY = this.height, cMaxX = 0, cMaxY = 0;
+                    region.forEach(cell => {
+                        cMinX = Math.min(cMinX, cell.x);
+                        cMinY = Math.min(cMinY, cell.y);
+                        cMaxX = Math.max(cMaxX, cell.x);
+                        cMaxY = Math.max(cMaxY, cell.y);
+                    });
+
+                    // Check if the region is a simple rectangle (no holes)
+                    let isSimpleRect = true;
+                    const expectedCount = (cMaxX - cMinX + 1) * (cMaxY - cMinY + 1);
+                    if (region.length !== expectedCount) {
+                        isSimpleRect = false;
+                    }
+
+                    if (isSimpleRect) {
+                        const cx = cMinX * cs;
+                        const cy = cMinY * cs;
+                        const cw = (cMaxX - cMinX + 1) * cs;
+                        const ch = (cMaxY - cMinY + 1) * cs;
+
+                        // Check if all cells are same type (e.g., secret passage)
+                        const allSameType = region.every(c => c.type === region[0].type);
+                        if (allSameType && region[0].type === 6) {
+                            svg += `<rect x="${cx}" y="${cy}" width="${cw}" height="${ch}" fill="${CONFIG.colors.secret}"/>`;
+                        } else {
+                            svg += `<rect x="${cx}" y="${cy}" width="${cw}" height="${ch}" fill="${CONFIG.colors.corridor}"/>`;
+                        }
+
+                        region.forEach(cell => {
+                            drawn[cell.y][cell.x] = true;
+                        });
+                    } else {
+                        // Not a simple rect, draw individual cells
+                        region.forEach(cell => {
+                            const cx = cell.x * cs;
+                            const cy = cell.y * cs;
+                            let fillColor = CONFIG.colors.corridor;
+                            if (cell.type === 6) fillColor = CONFIG.colors.secret;
+                            svg += `<rect x="${cx}" y="${cy}" width="${cs}" height="${cs}" fill="${fillColor}"/>`;
+                            drawn[cell.y][cell.x] = true;
+                        });
+                    }
+                });
+
+                // Draw special cells (entrances, exits, pools, traps) on top
+                for (let y = 0; y < this.height; y++) {
+                    for (let x = 0; x < this.width; x++) {
+                        const cellType = this.grid[y][x];
+                        if (cellType >= 2 && cellType <= 5) {
+                            const cx = x * cs;
+                            const cy = y * cs;
+                            let fillColor = CONFIG.colors.entrance;
+                            let label = '';
+
+                            if (cellType === 2) { // Entrance
+                                fillColor = CONFIG.colors.entrance;
+                                label = 'E';
+                            } else if (cellType === 3) { // Exit
+                                fillColor = CONFIG.colors.exit;
+                                label = 'X';
+                            } else if (cellType === 4) { // Pool
+                                fillColor = CONFIG.colors.pool;
+                                label = 'P';
+                            } else if (cellType === 5) { // Trap
+                                fillColor = CONFIG.colors.trap;
+                                label = 'T';
+                            }
+
+                            svg += `<rect x="${cx}" y="${cy}" width="${cs}" height="${cs}" fill="${fillColor}"/>`;
+                            if (label) {
+                                svg += `<text x="${cx + cs / 2}" y="${cy + cs / 2}" font-family="Arial" font-size="${cs / 2}" fill="${CONFIG.colors.text_primary}" text-anchor="middle" dominant-baseline="middle">${label}</text>`;
+                            }
                         }
                     }
                 }
@@ -3981,7 +4078,8 @@ const MONSTERS = {
 
                 svg += '</svg>';
                 return svg;
-            }        }
+            }
+        }
 
         // ============================================
         // DM TOOLS
@@ -4765,7 +4863,7 @@ const MONSTERS = {
                 document.getElementById('player-hp').value = rollHitPoints(classData.hitDie, level, conMod);
             });
 
-            document.getElementById('generate-player').addEventListener('click', updatePlayerStats);
+            document.getElementById('generate-player').addEventListener('click', generateCharacterFromSelection);
 
             document.getElementById('randomize-player').addEventListener('click', generateRandomCharacter);
 
