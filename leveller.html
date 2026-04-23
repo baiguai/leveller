@@ -2552,6 +2552,48 @@ const MONSTERS = {
             }
         }
 
+        function generateCharacterFromSelection() {
+            const name = generateRandomName();
+            const race = document.getElementById('player-race').value;
+            const charClass = document.getElementById('player-class').value;
+            const level = parseInt(document.getElementById('player-level').value) || 1;
+
+            document.getElementById('player-name').value = name;
+
+            const raceData = PLAYER_RACES[race];
+            document.getElementById('player-speed').value = raceData.speed + ' ft.';
+
+            ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach(stat => {
+                let base = roll4d6DropLowest();
+                if (raceData.abilities[stat.toUpperCase()]) {
+                    base += raceData.abilities[stat.toUpperCase()];
+                }
+                document.getElementById('player-' + stat).value = Math.min(Math.max(base, 1), 20);
+            });
+
+            const classData = PLAYER_CLASSES[charClass];
+            const conMod = getAbilityMod(parseInt(document.getElementById('player-con').value));
+            const hp = rollHitPoints(classData.hitDie, level, conMod);
+            document.getElementById('player-hp').value = hp;
+
+            let ac = 10 + getAbilityMod(parseInt(document.getElementById('player-dex').value));
+            if (charClass === 'Monk') {
+                ac = 10 + getAbilityMod(parseInt(document.getElementById('player-dex').value)) + getAbilityMod(parseInt(document.getElementById('player-wis').value));
+            } else if (charClass === 'Barbarian') {
+                ac = 10 + getAbilityMod(parseInt(document.getElementById('player-dex').value)) + conMod;
+            }
+            document.getElementById('player-ac').value = ac;
+
+            classData.savingThrows.forEach(save => {
+                document.getElementById('player-save-' + save.toLowerCase()).checked = true;
+            });
+
+            document.getElementById('player-equipment').value = '';
+            document.getElementById('player-features').value = '';
+
+            updatePlayerStats();
+        }
+
         function generateRandomCharacter() {
             const races = Object.keys(PLAYER_RACES);
             const classes = Object.keys(PLAYER_CLASSES);
@@ -4821,7 +4863,7 @@ const MONSTERS = {
                 document.getElementById('player-hp').value = rollHitPoints(classData.hitDie, level, conMod);
             });
 
-            document.getElementById('generate-player').addEventListener('click', updatePlayerStats);
+            document.getElementById('generate-player').addEventListener('click', generateCharacterFromSelection);
 
             document.getElementById('randomize-player').addEventListener('click', generateRandomCharacter);
 
